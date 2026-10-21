@@ -74,3 +74,13 @@ src/
 
 Every mutation goes through `patch()` — a `structuredClone` + mutator + write to
 LocalStorage — so state always persists on refresh.
+
+### Persistence guarantees
+
+- Changes are written to **LocalStorage on every action** (no save button) —
+  a page reload, browser restart or even a server restart loses nothing.
+- Data is scoped to **this browser + `http://localhost:5173`**, so always open
+  the app the same way (the one-click `LifePulse` launcher pins the port).
+- **Backup / Restore** in the sidebar footer exports the entire data store as a
+  `lifepulse-backup-YYYY-MM-DD.json` file and restores it by picking that file —
+  use it to move data between browsers or recover after clearing site data.

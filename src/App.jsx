@@ -2,6 +2,7 @@ import { useCallback, useState } from "react"
 import Sidebar, { MobileBar } from "./components/Sidebar"
 import { usePersistentState, patchState } from "./lib/storage"
 import { buildSeedData } from "./lib/seed"
+import { dateKey } from "./lib/utils"
 import Scheduler from "./pages/Scheduler"
 import Daily from "./pages/Daily"
 import Analytics from "./pages/Analytics"
@@ -20,6 +21,34 @@ export default function App() {
     [setData],
   )
 
+  /** Download the whole store as a JSON backup file. */
+  const onExport = useCallback(() => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `lifepulse-backup-${dateKey(new Date())}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }, [data])
+
+  /** Restore the store from a backup JSON file. */
+  const onImport = useCallback(async (file) => {
+    try {
+      const next = JSON.parse(await file.text())
+      const required = ["scheduler", "daily", "goals", "finance", "notes"]
+      if (!next || typeof next !== "object" || required.some((k) => !(k in next))) {
+        throw new Error("this file is not a LifePulse backup")
+      }
+      patchState(setData, (d) => Object.assign(d, next))
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err?.message || "could not read the file" }
+    }
+  }, [setData])
+
   function reset() {
     if (window.confirm("Reset all LifePulse data to the 30-day demo dataset? This cannot be undone.")) {
       try {
@@ -33,7 +62,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <Sidebar page={page} onNavigate={setPage} onReset={reset} />
+      <Sidebar page={page} onNavigate={setPage} onReset={reset} onExport={onExport} onImport={onImport} />
       <MobileBar page={page} onNavigate={setPage} />
 
       <main className="min-h-screen md:pl-64" id="main">

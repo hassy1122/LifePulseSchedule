@@ -1,3 +1,4 @@
+import { useRef, useState } from "react"
 import {
   CalendarCheck,
   CalendarClock,
@@ -17,7 +18,24 @@ const NAV = [
   { id: "notes", label: "Notes", icon: StickyNote, hint: "Markdown workspace" },
 ]
 
-export default function Sidebar({ page, onNavigate, onReset }) {
+export default function Sidebar({ page, onNavigate, onReset, onExport, onImport }) {
+  const [status, setStatus] = useState(null)
+  const statusTimer = useRef(null)
+
+  async function handleImport(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    const res = await onImport(file)
+    setStatus(
+      res.ok
+        ? { ok: true, msg: "Backup restored — all your changes are back." }
+        : { ok: false, msg: `Import failed: ${res.error}` },
+    )
+    window.clearTimeout(statusTimer.current)
+    statusTimer.current = window.setTimeout(() => setStatus(null), 4500)
+  }
+
   return (
     <aside
       className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200/80 bg-white md:flex"
@@ -69,8 +87,39 @@ export default function Sidebar({ page, onNavigate, onReset }) {
       {/* Footer */}
       <div className="border-t border-slate-100 p-4">
         <p className="px-1 text-[11px] font-medium text-slate-400">
-          Data is stored locally in your browser.
+          Data is saved automatically in this browser.
         </p>
+        <div className="mt-2 flex gap-1.5">
+          <button
+            type="button"
+            onClick={onExport}
+            aria-label="Download a backup file of all your data"
+            className="btn-soft !h-8 flex-1 !px-2 text-[11px]"
+          >
+            Backup
+          </button>
+          <label
+            className="btn-soft flex-1 cursor-pointer !h-8 !px-2 text-[11px]"
+            title="Restore everything from a backup file"
+          >
+            <span aria-hidden="false">Restore</span>
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={handleImport}
+              aria-label="Restore from a backup file"
+            />
+          </label>
+        </div>
+        {status ? (
+          <p
+            role="status"
+            className={`mt-2 px-1 text-[11px] font-semibold ${status.ok ? "text-emerald-600" : "text-rose-600"}`}
+          >
+            {status.msg}
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={onReset}
