@@ -9,8 +9,8 @@ backend or account needed.
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run build    # production bundle in dist/
+npm run dev      # http://localhost:5173 (service worker also registers for install testing)
+npm run build    # production bundle in dist/ (+ PWA service worker & manifest)
 npm run preview  # serve the production build
 ```
 
@@ -18,6 +18,33 @@ npm run preview  # serve the production build
 > sample data (generated on first launch) so charts, goals, expenses and notes
 > are immediately visible. Use **Reset demo data** in the sidebar footer to
 > regenerate — this clears your changes.
+
+## Install as an app (PWA)
+
+LifePulse ships as an installable Progressive Web App — an app icon, its own
+window, and full offline behaviour (all assets are precached by a service
+worker, and your data lives in LocalStorage regardless of connectivity).
+
+- **Desktop (Chrome/Edge/Brave):** while viewing the app, click the Install
+  icon in the address bar (or Menu ▸ *Install LifePulse…*).
+- **Android:** open the site, tap the ⋮ menu ▸ *Add to Home screen /
+  Install app*.
+- **iOS:** Safari ▸ Share ▸ *Add to Home Screen*.
+- Browsers only offer install over a **secure context** (HTTPS, or
+  `localhost`). Serving from another PC/phone over plain HTTP won't show the
+  prompt — deploy the `dist/` folder to any HTTPS static host (Netlify,
+  Vercel, Cloudflare Pages…) or tunnel it to install on a phone.
+- Updates apply automatically (`autoUpdate` service worker, caches cleaned).
+
+Commands:
+
+```bash
+npm run build    # generates dist/ incl. sw.js + manifest.webmanifest
+npm run preview  # serve the production build (e.g. http://localhost:4173)
+```
+
+> The 192/512 px icons are generated from `LifePulse.ico` once
+> (PowerShell/System.Drawing) and kept in `public/pwa-*.png`.
 
 ## Modules
 
