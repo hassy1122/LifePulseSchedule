@@ -2,7 +2,7 @@ import { Droplets, Dumbbell, Check, CodeXml, Moon, Footprints, Flame } from "luc
 import { dailyDoneCount, dailyPct, TRACKERS } from "../lib/seed"
 import { bandFor } from "../lib/theme"
 import { fmtDayLong } from "../lib/utils"
-import { EmptyState, PageHeader, Stepper } from "../components/ui"
+import { EmptyState, PageHeader, ProgressRing, Stepper } from "../components/ui"
 
 const TRACKER_ICONS = {
   prayers: Moon,
@@ -18,34 +18,6 @@ const TRACKER_TINTS = {
   walk: "bg-lime-50 text-lime-600",
   coding: "bg-sky-50 text-sky-600",
   water: "bg-cyan-50 text-cyan-600",
-}
-
-function ProgressRing({ pct }) {
-  const band = bandFor(pct)
-  const R = 66
-  const C = 2 * Math.PI * R
-  return (
-    <div className="relative mx-auto h-44 w-44" role="img" aria-label={`Daily completion ${pct}%`}>
-      <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90">
-        <circle cx="80" cy="80" r={R} fill="none" stroke={band.softStroke} strokeWidth="13" />
-        <circle
-          cx="80"
-          cy="80"
-          r={R}
-          fill="none"
-          stroke={band.stroke}
-          strokeWidth="13"
-          strokeLinecap="round"
-          strokeDasharray={`${(pct / 100) * C} ${C}`}
-          className="transition-all duration-700 ease-out"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-4xl font-extrabold tracking-tight ${band.text}`}>{Math.round(pct)}%</span>
-        <span className="mt-0.5 text-xs font-bold tracking-wide uppercase text-slate-400">{band.label}</span>
-      </div>
-    </div>
-  )
 }
 
 export default function Daily({ data, patch, todayKey }) {

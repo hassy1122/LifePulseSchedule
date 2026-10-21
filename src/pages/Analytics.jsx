@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { ChevronLeft, ChevronRight, Award, Flame, CircleCheck } from "lucide-react"
+import { ChevronLeft, ChevronRight, Award, Flame, CircleCheck, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { dailyPct } from "../lib/seed"
 import { bandFor } from "../lib/theme"
 import { fmtMonthLong, monthKeyOf, shiftMonth } from "../lib/utils"
@@ -57,6 +57,20 @@ export default function Analytics({ data, todayKey }) {
   const goodDays = scored.filter((d) => d.pct >= 75 && d.pct < 100).length
 
   const band = bandFor(avg)
+
+  /* month-over-month comparison */
+  const prevMonth = shiftMonth(month, -1)
+  const prevScored = useMemo(
+    () =>
+      Object.entries(data.daily)
+        .filter(([k]) => k.startsWith(prevMonth))
+        .map(([, e]) => dailyPct(e)),
+    [data.daily, prevMonth],
+  )
+  const prevMonthAvg = prevScored.length
+    ? Math.round((prevScored.reduce((a, b) => a + b, 0) / prevScored.length) * 10) / 10
+    : null
+
   const maxStreak = useMemo(() => {
     let best = 0, cur = 0
     for (const d of monthData) {
@@ -116,6 +130,7 @@ export default function Analytics({ data, todayKey }) {
         <StatCard icon={Award} tint="bg-violet-50 text-violet-600" label="Perfect days (100%)" value={perfectDays} />
         <StatCard icon={CircleCheck} tint="bg-emerald-50 text-emerald-600" label="Days ≥ 75%" value={goodDays + perfectDays} />
         <StatCard icon={Flame} tint="bg-amber-50 text-amber-600" label="Longest ≥75% streak" value={`${maxStreak} days`} />
+        <DeltaCard delta={prevMonthAvg == null ? null : avg - prevMonthAvg} prevMonthLabel={fmtMonthLong(prevMonth).split(" ")[0]} />
       </div>
 
       {/* Daily trend chart */}
@@ -233,6 +248,40 @@ function StatCard({ icon: Icon, tint, label, value }) {
       <div className="min-w-0">
         <p className="text-2xl font-extrabold tracking-tight text-slate-900">{value}</p>
         <p className="text-xs font-medium text-slate-400">{label}</p>
+      </div>
+    </div>
+  )
+}
+
+function DeltaCard({ delta, prevMonthLabel }) {
+  if (delta == null || prevMonthLabel == null) {
+    return (
+      <div className="card flex items-center gap-4">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-400" aria-hidden="true">
+          <ArrowUpRight className="h-5 w-5" strokeWidth={2.2} />
+        </span>
+        <div>
+          <p className="text-2xl font-extrabold tracking-tight text-slate-400">—</p>
+          <p className="text-xs font-medium text-slate-400">No data for {prevMonthLabel || "last month"}</p>
+        </div>
+      </div>
+    )
+  }
+  const better = delta >= 0
+  const Icon = better ? ArrowUpRight : ArrowDownRight
+  return (
+    <div className="card flex items-center gap-4">
+      <span
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${better ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}
+        aria-hidden="true"
+      >
+        <Icon className="h-5 w-5" strokeWidth={2.2} />
+      </span>
+      <div>
+        <p className={`text-2xl font-extrabold tracking-tight ${better ? "text-emerald-700" : "text-rose-600"}`}>
+          {better ? "+" : ""}{Math.round(delta * 10) / 10}%
+        </p>
+        <p className="text-xs font-medium text-slate-400">vs {prevMonthLabel} average</p>
       </div>
     </div>
   )

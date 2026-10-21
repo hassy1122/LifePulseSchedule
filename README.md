@@ -23,9 +23,10 @@ npm run preview  # serve the production build
 
 | Module | File | Highlights |
 | --- | --- | --- |
-| Master Scheduler | `src/pages/Scheduler.jsx` | Interactive 24-hour planner, quick-add presets (Fajar, Zohar, Asr, Maghrib, Isha, Morning Walk, Exercise/Gym, Deep Work/Coding, Reading) tucked into the **Add item** popover, fully custom items (title / category / start time / duration), per-item **add · edit · remove**, and 4-state status toggles (Pending · In Progress · Completed · Skipped) |
+| Today | `src/pages/Today.jsx` | The landing dashboard: time-aware greeting, hero completion ring with 14-day sparkline, streak / month average / spent today / open sprints stat cards, "Next up" scheduler forecast, quick jump grid |
+| Master Scheduler | `src/pages/Scheduler.jsx` | Interactive 24-hour planner with **Now** hour indicator, quick-add presets (Fajar, Zohar, Asr, Maghrib, Isha, Morning Walk, Exercise/Gym, Deep Work/Coding, Reading) tucked into the **Add item** popover, fully custom items (title / category / start time / duration), per-item **add · edit · remove**, and 4-state status toggles (Pending · In Progress · Completed · Skipped) |
 | Daily Sheet | `src/pages/Daily.jsx` | 5 tracked habits (Prayers, Exercise, Walk, Coding hours, Water), live completion ring, real-time `Completion % = Completed / Total × 100` |
-| Analytics | `src/pages/Analytics.jsx` | Month navigation, daily completion % area chart with 7-day rolling average, category-consistency donut (Prayers vs Exercise vs Coding), monthly average score card |
+| Analytics | `src/pages/Analytics.jsx` | Month navigation, daily completion % area chart with 7-day rolling average, category-consistency donut (Prayers vs Exercise vs Coding), monthly average score card **with month-over-month delta** |
 | Goals | `src/pages/Goals.jsx` | Tabbed workspace: Daily / Small (weekly-sprint) / Large (monthly-quarterly), milestone checklists with animated progress bars |
 | Finance | `src/pages/Finance.jsx` | Quick-entry logger (date, title, 5 categories, amount), Today & This-Month summary cards, category donut, grouped monthly log |
 | Notes | `src/pages/Notes.jsx` | Markdown editor with toolbar (bold, italic, code, headings, bullets, code blocks), instant search, tag filtering |
@@ -47,7 +48,8 @@ every module follows.
 
 ```
 src/
-  App.jsx               # shell: sidebar nav + page routing + shared store
+    App.jsx               # shell: sidebar nav (Today first) + live "today" clock + shared store
+  pages/                # one file per module (see table above)
   index.css             # Tailwind v4 theme tokens + component classes
   lib/
     storage.js          # usePersistentState (LocalStorage) + immutable patch

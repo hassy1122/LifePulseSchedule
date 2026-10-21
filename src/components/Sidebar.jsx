@@ -5,11 +5,13 @@ import {
   ChartColumn,
   HeartPulse,
   StickyNote,
+  Sun,
   Target,
   Wallet,
 } from "lucide-react"
 
 const NAV = [
+  { id: "today", label: "Today", icon: Sun, hint: "Everything at a glance" },
   { id: "scheduler", label: "Scheduler", icon: CalendarClock, hint: "24-hour routine planner" },
   { id: "daily", label: "Daily Sheet", icon: CalendarCheck, hint: "Habit checklist" },
   { id: "analytics", label: "Analytics", icon: ChartColumn, hint: "Monthly trends" },

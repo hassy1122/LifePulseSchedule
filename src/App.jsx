@@ -3,6 +3,7 @@ import Sidebar, { MobileBar } from "./components/Sidebar"
 import { usePersistentState, patchState } from "./lib/storage"
 import { buildSeedData } from "./lib/seed"
 import { dateKey } from "./lib/utils"
+import Today from "./pages/Today"
 import Scheduler from "./pages/Scheduler"
 import Daily from "./pages/Daily"
 import Analytics from "./pages/Analytics"
@@ -13,7 +14,7 @@ import Notes from "./pages/Notes"
 const STORAGE_KEY = "lifepulse-data-v1"
 
 export default function App() {
-  const [page, setPage] = useState("scheduler")
+  const [page, setPage] = useState("today")
   const [data, setData] = usePersistentState(STORAGE_KEY, buildSeedData)
   const [todayKey, setTodayKey] = useState(() => dateKey(new Date()))
 
@@ -83,7 +84,7 @@ export default function App() {
 
       <main className="min-h-screen md:pl-64" id="main">
         <div className="mx-auto max-w-6xl px-5 pt-10 pb-28 sm:px-8 md:pb-16" key={page}>
-          {page === "scheduler" && <Scheduler data={data} patch={patch} todayKey={todayKey} />}
+          {page === "today" && <Today data={data} todayKey={todayKey} onNavigate={setPage} />}          {page === "scheduler" && <Scheduler data={data} patch={patch} todayKey={todayKey} />}
           {page === "daily" && <Daily data={data} patch={patch} todayKey={todayKey} />}
           {page === "analytics" && <Analytics data={data} todayKey={todayKey} />}
           {page === "goals" && <Goals data={data} patch={patch} />}

@@ -216,6 +216,7 @@ function ItemPopover({ editing, blocks, onSubmit, onClose }) {
 export default function Scheduler({ data, patch, todayKey }) {
   const [viewKey, setViewKey] = useState(todayKey)
   const [editor, setEditor] = useState(null) // null | { block?: scheduler item }
+  const [nowHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60)
   const scroller = useRef(null)
 
   const blocks = data.scheduler?.[viewKey] ?? EMPTY_BLOCKS
@@ -339,18 +340,25 @@ export default function Scheduler({ data, patch, todayKey }) {
               <div className="absolute top-0 bottom-0 left-[52px] w-px bg-slate-100" aria-hidden="true" />
               {HOURS.map((h) => {
                 const row = blocksByHour.get(h) || []
+                const isNow = viewKey === todayKey && h === Math.floor(nowHour)
                 return (
                   <li key={h} className="relative flex gap-4">
                     <time
-                      className="w-[44px] shrink-0 pt-3.5 text-right text-[11px] font-semibold tabular-nums text-slate-300"
+                      className={`w-[44px] shrink-0 pt-3.5 text-right text-[11px] font-semibold tabular-nums ${isNow ? "font-extrabold text-violet-600" : "text-slate-300"}`}
                       dateTime={String(h).padStart(2, "0") + ":00"}
+                      title={isNow ? "Current hour" : undefined}
                     >
                       {fmtHour(h).replace(":00", "")}
                     </time>
                     <span
-                      className="mt-4 h-2 w-2 shrink-0 rounded-full border border-slate-300 bg-white"
+                      className={`mt-4 h-2 w-2 shrink-0 rounded-full border ${isNow ? "border-violet-500 bg-violet-500 ring-4 ring-violet-100" : "border-slate-300 bg-white"}`}
                       aria-hidden="true"
                     />
+                    {isNow && (
+                      <span className="sr-only" role="status">
+                        Current hour in the schedule
+                      </span>
+                    )}
                     <div className="min-w-0 flex-1 pb-2">
                       {row.length === 0 ? (
                         <div className="pt-1.5 text-[11px] font-medium text-slate-300">—</div>
