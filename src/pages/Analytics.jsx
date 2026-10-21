@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react"
 import {
   Area,
-  ComposedChart,
+  Bar,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Line,
   Pie,
   PieChart,
@@ -12,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { ChevronLeft, ChevronRight, Award, Flame, CircleCheck, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { ArrowDownRight, ArrowUpRight, Award, ChevronLeft, ChevronRight, CircleCheck, Flame } from "lucide-react"
 import { dailyPct } from "../lib/seed"
 import { bandFor } from "../lib/theme"
 import { addDays, fmtDayShort, fmtMonthLong, keyToDate, monthKeyOf, shiftMonth } from "../lib/utils"
@@ -24,7 +25,27 @@ const CATEGORY_META = [
   { id: "coding", label: "Coding (2h+)", color: "#F59E0B" },
 ]
 
+const RANGES = [
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "year", label: "Year" },
+  { id: "all", label: "Years" },
+]
+
+const AVG_TITLES = { week: "Weekly average", month: "Monthly average", year: "Yearly average", all: "All-time average" }
+
 const pct = (n) => (n == null ? null : Math.round(n * 10) / 10)
+
+const mean = (list) => (list.length ? pct(list.reduce((a, b) => a + b, 0) / list.length) : null)
+
+/** Adds a cumulative "running average" line to bar-style rows. */
+function withRunningAvg(rows) {
+  let acc = []
+  return rows.map((r) => {
+    if (r.pct != null) acc.push(r.pct)
+    return { ...r, avg: mean(acc) }
+  })
+}
 
 const HEAT_DAYS = 105
 const HEAT_LEGEND = [
@@ -43,37 +64,166 @@ function heatCellClass(p) {
 
 export default function Analytics({ data, todayKey, isDark = false }) {
   const [initialMonth] = useState(() => monthKeyOf(todayKey))
+  const [range, setRange] = useState("month")
   const [month, setMonth] = useState(initialMonth)
+  const [yearSel, setYearSel] = useState(Number(initialMonth.slice(0, 4)))
+  const [weekStart, setWeekStart] = useState(() => {
+    const dow = keyToDate(todayKey).getDay()
+    return addDays(todayKey, -dow)
+  })
 
+  /* ---- Month rows (daily + 7-day rolling average) ---- */
   const monthData = useMemo(() => {
     const [y, m] = month.split("-").map(Number)
     const daysInMonth = new Date(y, m, 0).getDate()
-    const days = []
-    for (let d = 1; d <= daysInMonth; d++) {
+    let acc = []
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const d = i + 1
       const key = `${month}-${String(d).padStart(2, "0")}`
       const entry = data.daily[key]
-      days.push({ key, day: d, pct: entry ? pct(dailyPct(entry) || 0) : null })
-    }
-    // rolling 7-day average line
-    let acc = []
-    return days.map((row) => {
-      if (row.pct != null) acc.push(row.pct)
+      const p = entry ? pct(dailyPct(entry) || 0) : null
+      if (p != null) acc.push(p)
       const window = acc.slice(-7)
       return {
-        ...row,
+        key,
+        label: String(d),
+        pct: p,
         avg: window.length ? pct(window.reduce((a, b) => a + b, 0) / window.length) : null,
       }
     })
   }, [month, data.daily])
 
-  const scored = monthData.filter((d) => d.pct != null)
-  const avg = scored.length ? pct(scored.reduce((a, b) => a + b.pct, 0) / scored.length) : 0
-  const perfectDays = scored.filter((d) => d.pct >= 100).length
-  const goodDays = scored.filter((d) => d.pct >= 75 && d.pct < 100).length
+  /* ---- Week rows ---- */
+  const weekData = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const key = addDays(weekStart, i)
+        const entry = data.daily[key]
+        return { key, label: fmtDayShort(key), pct: entry ? dailyPct(entry) : null }
+      }),
+    [weekStart, data.daily],
+  )
 
+  /* ---- Year rows (12 monthly averages + running average) ---- */
+  const yearData = useMemo(() => {
+    const rows = Array.from({ length: 12 }, (_, i) => {
+      const mk = `${yearSel}-${String(i + 1).padStart(2, "0")}`
+      const scores = Object.entries(data.daily)
+        .filter(([k]) => k.startsWith(mk))
+        .map(([, e]) => dailyPct(e))
+      return { key: mk, label: fmtMonthLong(mk).split(" ")[0].slice(0, 3), pct: mean(scores) }
+    })
+    return withRunningAvg(rows)
+  }, [yearSel, data.daily])
+
+  /* ---- Years rows (one bar per tracked year) ---- */
+  const allData = useMemo(() => {
+    const map = new Map()
+    for (const k of Object.keys(data.daily)) {
+      const y = k.slice(0, 4)
+      if (!map.has(y)) map.set(y, [])
+      map.get(y).push(dailyPct(data.daily[k]))
+    }
+    const rows = [...map.keys()]
+      .sort()
+      .map((y) => ({ key: y, label: y, pct: mean(map.get(y)) }))
+    return withRunningAvg(rows)
+  }, [data.daily])
+
+  const rows = range === "week" ? weekData : range === "month" ? monthData : range === "year" ? yearData : allData
+
+  /* ---- Range statistics (always counted over underlying days, not bars) ---- */
+  const dayPcts = useMemo(() => {
+    if (range === "week")
+      return Array.from({ length: 7 }, (_, i) => data.daily[addDays(weekStart, i)])
+        .filter(Boolean)
+        .map(dailyPct)
+    if (range === "month")
+      return Object.entries(data.daily).filter(([k]) => k.startsWith(month)).map(([, e]) => dailyPct(e))
+    if (range === "year")
+      return Object.entries(data.daily).filter(([k]) => k.startsWith(String(yearSel))).map(([, e]) => dailyPct(e))
+    return Object.values(data.daily).map(dailyPct)
+  }, [range, data.daily, weekStart, month, yearSel])
+
+  const trackedCount = dayPcts.length
+  const avg = mean(dayPcts) ?? 0
+  const perfectDays = dayPcts.filter((d) => d >= 100).length
+  const goodDays = dayPcts.filter((d) => d >= 75 && d < 100).length
   const band = bandFor(avg)
 
-  /* Recharts colors adjusted for the active theme */
+  /* ---- Previous-range comparison ---- */
+  const prevAvg = useMemo(() => {
+    if (range === "week") return mean(Array.from({ length: 7 }, (_, i) => {
+      const e = data.daily[addDays(weekStart, i - 7)]
+      return e ? dailyPct(e) : null
+    }).filter((v) => v != null))
+    if (range === "month") {
+      const pm = shiftMonth(month, -1)
+      return mean(Object.entries(data.daily).filter(([k]) => k.startsWith(pm)).map(([, e]) => dailyPct(e)))
+    }
+    if (range === "year") {
+      return mean(Object.entries(data.daily).filter(([k]) => k.startsWith(String(yearSel - 1))).map(([, e]) => dailyPct(e)))
+    }
+    return null
+  }, [range, data.daily, weekStart, month, yearSel])
+
+  const prevLabel = useMemo(() => {
+    if (range === "week") return "vs previous week"
+    if (range === "month") return `vs ${fmtMonthLong(shiftMonth(month, -1)).split(" ")[0]} average`
+    if (range === "year") return `vs ${yearSel - 1} average`
+    return null
+  }, [range, month, yearSel])
+
+  const lifetimeDays = Object.keys(data.daily).length
+
+  /* ---- Category consistency, filtered to the active range ---- */
+  const consistency = useMemo(() => {
+    const match = (k) =>
+      range === "week" ? k >= weekStart && k <= addDays(weekStart, 6)
+      : range === "month" ? k.startsWith(month)
+      : range === "year" ? k.startsWith(String(yearSel))
+      : true
+    const entries = Object.entries(data.daily).filter(([k]) => match(k))
+    return CATEGORY_META.map((c) => {
+      const hits = entries.filter(([, e]) =>
+        c.id === "coding" ? e.coding >= 2 : e[c.id],
+      ).length
+      return { ...c, value: hits, days: entries.length }
+    })
+  }, [data.daily, range, weekStart, month, yearSel])
+  const totalHits = consistency.reduce((a, c) => a + c.value, 0)
+
+  /* ---- Habit heatmap — last 15 weeks, aligned to Sunday ---- */
+  const heat = useMemo(() => {
+    const oldest = addDays(todayKey, -(HEAT_DAYS - 1))
+    const cells = []
+    for (let i = 0; i < keyToDate(oldest).getDay(); i++) cells.push({ blank: true })
+    for (let i = 0; i < HEAT_DAYS; i++) {
+      const key = addDays(oldest, i)
+      const entry = data.daily[key]
+      cells.push({ key, pct: entry ? dailyPct(entry) : null })
+    }
+    return cells
+  }, [data.daily, todayKey])
+
+  /* ---- Navigation per range ---- */
+  const goPrev = () => {
+    if (range === "week") setWeekStart(addDays(weekStart, -7))
+    else if (range === "month") setMonth(shiftMonth(month, -1))
+    else if (range === "year") setYearSel((y) => y - 1)
+  }
+  const goNext = () => {
+    if (range === "week") setWeekStart(addDays(weekStart, 7))
+    else if (range === "month") setMonth(shiftMonth(month, 1))
+    else if (range === "year") setYearSel((y) => y + 1)
+  }
+  const nextDisabled =
+    range === "week" ? addDays(weekStart, 6) >= todayKey
+    : range === "month" ? month >= initialMonth
+    : range === "year" ? yearSel >= Number(initialMonth.slice(0, 4))
+    : true
+
+  /* ---- Recharts theming ---- */
   const chartGrid = isDark ? "#334155" : "#E2E8F0"
   const chartTick = isDark ? "#64748B" : "#94A3B8"
   const tooltipProps = {
@@ -87,78 +237,74 @@ export default function Analytics({ data, todayKey, isDark = false }) {
     itemStyle: { color: isDark ? "#a8b3c7" : "#334155" },
     labelStyle: { color: isDark ? "#e2e8f0" : "#0f172a", fontWeight: 700 },
   }
+  const seriesNames = {
+    week: { pct: "Daily score" },
+    month: { pct: "Daily score", avg: "7-day avg" },
+    year: { pct: "Monthly average", avg: "Running average" },
+    all: { pct: "Yearly average", avg: "Running average" },
+  }
+  const cellFill = (p) => (p == null ? (isDark ? "#475569" : "#CBD5E1") : bandFor(p).stroke)
 
-  /* month-over-month comparison */
-  const prevMonth = shiftMonth(month, -1)
-  const prevScored = useMemo(
-    () =>
-      Object.entries(data.daily)
-        .filter(([k]) => k.startsWith(prevMonth))
-        .map(([, e]) => dailyPct(e)),
-    [data.daily, prevMonth],
-  )
-  const prevMonthAvg = prevScored.length
-    ? Math.round((prevScored.reduce((a, b) => a + b, 0) / prevScored.length) * 10) / 10
-    : null
-
-  const maxStreak = useMemo(() => {
-    let best = 0, cur = 0
-    for (const d of monthData) {
-      if (d.pct != null && d.pct >= 75) { cur++; best = Math.max(best, cur) } else cur = 0
-    }
-    return best
-  }, [monthData])
-
-  /* Category consistency: days completed per category (donut slices) */
-  const consistency = useMemo(() => {
-    const entries = Object.entries(data.daily).filter(([k]) => k.startsWith(month))
-    const out = CATEGORY_META.map((c) => {
-      const hits = entries.filter(([, e]) =>
-        c.id === "coding" ? e.coding >= 2 : e[c.id],
-      ).length
-      return { ...c, value: hits, days: entries.length }
-    })
-    return out
-  }, [month, data.daily])
-  const totalHits = consistency.reduce((a, c) => a + c.value, 0)
-
-  /* GitHub-style heatmap of the last ~15 weeks, aligned to Sunday. */
-  const heat = useMemo(() => {
-    const oldest = addDays(todayKey, -(HEAT_DAYS - 1))
-    const cells = []
-    for (let i = 0; i < keyToDate(oldest).getDay(); i++) cells.push({ blank: true })
-    for (let i = 0; i < HEAT_DAYS; i++) {
-      const key = addDays(oldest, i)
-      const entry = data.daily[key]
-      cells.push({ key, pct: entry ? dailyPct(entry) : null })
-    }
-    return cells
-  }, [data.daily, todayKey])
+  const heading = range === "week" || range === "month" ? "Daily completion %" : range === "year" ? "Monthly averages" : "Yearly averages"
+  const rangeBlurb =
+    range === "week" ? `${fmtDayShort(weekStart)} – ${fmtDayShort(addDays(weekStart, 6))}`
+    : range === "month" ? fmtMonthLong(month)
+    : range === "year" ? String(yearSel)
+    : "since tracking began"
 
   return (
     <div>
-      <PageHeader title="Analytics" subtitle="Month-wise trend of your daily completion, with category consistency breakdown.">
-        <div className="flex items-center gap-1">
-          <button type="button" className="icon-btn" aria-label="Previous month" onClick={() => setMonth(shiftMonth(month, -1))}>
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-          </button>
-          <span className="btn-soft !h-9 select-none px-3 text-xs">{fmtMonthLong(month)}</span>
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="Next month"
-            disabled={month >= initialMonth}
-            onClick={() => setMonth(shiftMonth(month, 1))}
+      <PageHeader
+        title="Analytics"
+        subtitle="Your schedule results across any horizon — week, month, year and all time."
+      >
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {/* Range selector */}
+          <div
+            className="inline-flex flex-wrap gap-0.5 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700"
+            role="group"
+            aria-label="Time range"
           >
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </button>
+            {RANGES.map((r) => {
+              const active = range === r.id
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setRange(r.id)}
+                  className={`rounded-lg px-3 py-1 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-violet-500 ${
+                    active
+                      ? "border border-slate-200 bg-white text-slate-800 shadow-sm dark:border-slate-600"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              )
+            })}
+          </div>
+          {/* Range navigation (hidden on the all-time view) */}
+          {range !== "all" ? (
+            <div className="flex items-center gap-1">
+              <button type="button" className="icon-btn" aria-label="Previous" onClick={goPrev}>
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <span className="btn-soft !h-9 select-none px-3 text-xs">
+                {range === "week" ? "Week" : range === "month" ? fmtMonthLong(month) : yearSel}
+              </span>
+              <button type="button" className="icon-btn" aria-label="Next" disabled={nextDisabled} onClick={goNext}>
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
         </div>
       </PageHeader>
 
       {/* Average + stat cards */}
       <div className="mb-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className={`card border ${band.bg} ${band.border} md:col-span-2 xl:col-span-1`} aria-live="polite">
-          <p className={`section-title ${band.text} opacity-80`}>Monthly average</p>
+          <p className={`section-title ${band.text} opacity-80`}>{AVG_TITLES[range]}</p>
           <p className={`mt-3 text-5xl font-extrabold tracking-tight ${band.text}`}>{avg}%</p>
           <span
             className={`mt-4 inline-block rounded-full border px-3 py-1 text-xs font-bold ${band.bg} ${band.border} ${band.text}`}
@@ -166,32 +312,39 @@ export default function Analytics({ data, todayKey, isDark = false }) {
             {band.label}
           </span>
           <p className={`mt-3 text-xs font-semibold ${band.text} opacity-80`}>
-            Across {scored.length} tracked days of {fmtMonthLong(month)}
+            Across {trackedCount} tracked day{trackedCount === 1 ? "" : "s"} · {rangeBlurb}
           </p>
         </div>
 
         <StatCard icon={Award} tint="bg-violet-50 text-violet-600" label="Perfect days (100%)" value={perfectDays} />
         <StatCard icon={CircleCheck} tint="bg-emerald-50 text-emerald-600" label="Days ≥ 75%" value={goodDays + perfectDays} />
-        <StatCard icon={Flame} tint="bg-amber-50 text-amber-600" label="Longest ≥75% streak" value={`${maxStreak} days`} />
-        <DeltaCard delta={prevMonthAvg == null ? null : avg - prevMonthAvg} prevMonthLabel={fmtMonthLong(prevMonth).split(" ")[0]} />
+        {prevLabel != null ? (
+          <DeltaCard delta={prevAvg == null ? null : avg - prevAvg} prevLabel={prevLabel} />
+        ) : (
+          <StatCard icon={Flame} tint="bg-sky-50 text-sky-600" label="Lifetime tracked days" value={lifetimeDays} />
+        )}
       </div>
 
-      {/* Daily trend chart */}
+      {/* Trend chart */}
       <section className="card mb-6" aria-labelledby="trend-heading">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 id="trend-heading" className="text-sm font-bold text-slate-800">Daily completion %</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 id="trend-heading" className="text-sm font-bold text-slate-800">{heading}</h2>
           <div className="flex items-center gap-4 text-[11px] font-semibold text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-violet-500" aria-hidden="true" /> Daily score
+              <span className="h-2 w-2 rounded-full bg-violet-500" aria-hidden="true" />
+              {range === "week" || range === "month" ? "Daily score" : range === "year" ? "Monthly average" : "Yearly average"}
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true" /> 7-day average
-            </span>
+            {range !== "week" ? (
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true" />
+                {range === "month" ? "7-day average" : "Running average"}
+              </span>
+            ) : null}
           </div>
         </div>
-        <div className="h-72" role="img" aria-label="Line and area chart of daily completion percentage">
+        <div className="h-72" role="img" aria-label={`Chart of ${heading.toLowerCase()} · ${rangeBlurb}`}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={monthData} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+            <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
               <defs>
                 <linearGradient id="fillPct" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#A855F7" stopOpacity={0.18} />
@@ -199,25 +352,50 @@ export default function Analytics({ data, todayKey, isDark = false }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: chartTick }} tickLine={false} axisLine={{ stroke: chartGrid }} interval={2} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: chartTick }}
+                tickLine={false}
+                axisLine={{ stroke: chartGrid }}
+                interval={range === "month" ? 2 : 0}
+              />
               <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: chartTick }} tickLine={false} axisLine={false} width={44} unit="%" />
               <Tooltip
                 {...tooltipProps}
-                formatter={(v, name) => [`${v}%`, name === "pct" ? "Daily score" : "7-day avg"]}
-                labelFormatter={(d) => `${fmtMonthLong(month).split(" ")[0]} ${d}`}
+                formatter={(v, name) => [`${v}%`, seriesNames[range][name] || name]}
+                labelFormatter={(l) => (range === "month" ? `${fmtMonthLong(month).split(" ")[0]} ${l}` : l)}
               />
-              <Area
-                type="monotone"
-                dataKey="pct"
-                stroke="#8B5CF6"
-                strokeWidth={2.5}
-                fill="url(#fillPct)"
-                dot={{ r: 2.5, fill: "#fff", stroke: "#8B5CF6", strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "#8B5CF6", stroke: "#fff", strokeWidth: 2 }}
-                connectNulls
-                name="pct"
-              />
-              <Line type="monotone" dataKey="avg" stroke="#22C55E" strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls name="avg" />
+              {range === "week" || range === "month" ? (
+                <Area
+                  type="monotone"
+                  dataKey="pct"
+                  stroke="#8B5CF6"
+                  strokeWidth={2.5}
+                  fill="url(#fillPct)"
+                  dot={{ r: 2.5, fill: "#fff", stroke: "#8B5CF6", strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: "#8B5CF6", stroke: "#fff", strokeWidth: 2 }}
+                  connectNulls
+                  name="pct"
+                />
+              ) : (
+                <Bar dataKey="pct" name="pct" maxBarSize={56} radius={[6, 6, 0, 0]}>
+                  {rows.map((d) => (
+                    <Cell key={d.key} fill={cellFill(d.pct)} />
+                  ))}
+                </Bar>
+              )}
+              {range !== "week" ? (
+                <Line
+                  type="monotone"
+                  dataKey="avg"
+                  stroke="#22C55E"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  dot={false}
+                  connectNulls
+                  name="avg"
+                />
+              ) : null}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -226,7 +404,9 @@ export default function Analytics({ data, todayKey, isDark = false }) {
       {/* Category consistency donut */}
       <section className="card" aria-labelledby="consistency-heading">
         <h2 id="consistency-heading" className="mb-1 text-sm font-bold text-slate-800">Category consistency</h2>
-        <p className="mb-4 text-xs font-medium text-slate-400">Days each category was completed — Prayers vs. Exercise vs. Coding.</p>
+        <p className="mb-4 text-xs font-medium text-slate-400">
+          Days each category was completed, {range === "week" ? "this week" : range === "month" ? "this month" : range === "year" ? "this year" : "all time"} — Prayers vs. Exercise vs. Coding.
+        </p>
         <div className="grid items-center gap-6 md:grid-cols-2">
           <div className="h-64" role="img" aria-label={`Donut chart: ${consistency.map(c => `${c.label} ${c.value} days`).join(", ")}`}>
             <ResponsiveContainer width="100%" height="100%">
@@ -306,7 +486,7 @@ export default function Analytics({ data, todayKey, isDark = false }) {
           <div
             className="grid grid-flow-col grid-rows-7 gap-[3px]"
             role="img"
-            aria-label={`Habit heatmap of the last 15 weeks, colored by daily completion band`}
+            aria-label="Habit heatmap of the last 15 weeks, colored by daily completion band"
           >
             {heat.map((cell, i) =>
               cell.blank ? (
@@ -342,8 +522,9 @@ function StatCard({ icon: Icon, tint, label, value }) {
   )
 }
 
-function DeltaCard({ delta, prevMonthLabel }) {
-  if (delta == null || prevMonthLabel == null) {
+function DeltaCard({ delta, prevLabel }) {
+  if (prevLabel == null) return null
+  if (delta == null) {
     return (
       <div className="card flex items-center gap-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-400" aria-hidden="true">
@@ -351,7 +532,7 @@ function DeltaCard({ delta, prevMonthLabel }) {
         </span>
         <div>
           <p className="text-2xl font-extrabold tracking-tight text-slate-400">—</p>
-          <p className="text-xs font-medium text-slate-400">No data for {prevMonthLabel || "last month"}</p>
+          <p className="text-xs font-medium text-slate-400">No data {prevLabel}</p>
         </div>
       </div>
     )
@@ -370,7 +551,7 @@ function DeltaCard({ delta, prevMonthLabel }) {
         <p className={`text-2xl font-extrabold tracking-tight ${better ? "text-emerald-700" : "text-rose-600"}`}>
           {better ? "+" : ""}{Math.round(delta * 10) / 10}%
         </p>
-        <p className="text-xs font-medium text-slate-400">vs {prevMonthLabel} average</p>
+        <p className="text-xs font-medium text-slate-400">{prevLabel}</p>
       </div>
     </div>
   )
