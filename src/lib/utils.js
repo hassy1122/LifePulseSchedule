@@ -79,11 +79,12 @@ export function uid(prefix = "id") {
     .slice(2, 8)}`
 }
 
-/** Currency formatting for the finance module. */
+/** Currency formatting for the finance module (Indian-subcontinent market: PKR). */
 export function fmtMoney(n) {
-  return n.toLocaleString(undefined, {
+  return new Intl.NumberFormat("en-PK", {
     style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  })
+    currency: "PKR",
+    currencyDisplay: "narrowSymbol",
+    maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
+  }).format(n)
 }

@@ -48,15 +48,16 @@ const UTILITIES = ["Electricity bill", "Internet", "Water bill", "Phone plan"]
 const TRAVEL = ["Uber ride", "Train ticket", "Fuel top-up", "Bus pass"]
 const MISC = ["Gift", "Stationery", "Laundry", "Donation", "Haircut"]
 const POOLS = {
-  Food: [FOOD, 5, 40],
-  Tech: [TECH, 15, 90],
-  Utilities: [UTILITIES, 10, 120],
-  Travel: [TRAVEL, 4, 60],
-  Misc: [MISC, 3, 45],
+  Food: [FOOD, 250, 3500],
+  Tech: [TECH, 500, 15000],
+  Utilities: [UTILITIES, 600, 12000],
+  Travel: [TRAVEL, 300, 6000],
+  Misc: [MISC, 150, 5000],
 }
 
 const pick = (rand, arr) => arr[Math.floor(rand() * arr.length)]
-const round = (v) => Math.round(v * 100) / 100
+/** Whole-rupee amounts. */
+const round = (v) => Math.round(v)
 
 /** Build the full pre-populated store: 30 days of history + goals + notes. */
 export function buildSeedData() {
@@ -114,8 +115,8 @@ export function buildSeedData() {
     finance: {
       transactions: [],
       budget: {
-        monthly: 800,
-        categories: { Food: 300, Tech: 150, Utilities: 200, Travel: 100, Misc: 80 },
+        monthly: 100000,
+        categories: { Food: 35000, Tech: 15000, Utilities: 25000, Travel: 10000, Misc: 8000 },
       },
     },
     notes: [
@@ -162,7 +163,7 @@ const monthStats = useMemo(
         title: "Budget tweak ideas",
         tags: ["finance"],
         updatedAt: Date.now() - 36e5 * 78,
-        body: `- Cap **Food** delivery at $45 / week
+        body: `- Cap **Food** delivery at Rs 8,000 / week
 - Cancel the third streaming service
 - Auto-transfer 10% of income on payday
 
@@ -267,7 +268,7 @@ Check the finance pie chart every Friday.`,
         date: key,
         title: "Internet bill",
         category: "Utilities",
-        amount: 39.99,
+        amount: 6499,
       })
     }
   }
@@ -279,7 +280,7 @@ Check the finance pie chart every Friday.`,
       date: today,
       title: "Coffee",
       category: "Food",
-      amount: 3.75,
+      amount: 750,
     })
   }
 

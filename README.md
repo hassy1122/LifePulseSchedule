@@ -28,7 +28,7 @@ npm run preview  # serve the production build
 | Daily Sheet | `src/pages/Daily.jsx` | 5 tracked habits (Prayers, Exercise, Walk, Coding hours, Water), live completion ring, real-time `Completion % = Completed / Total × 100` |
 | Analytics | `src/pages/Analytics.jsx` | Month navigation, daily completion % area chart with 7-day rolling average, category-consistency donut (Prayers vs Exercise vs Coding), monthly average score card **with month-over-month delta**, and a **GitHub-style 15-week consistency heatmap** |
 | Goals | `src/pages/Goals.jsx` | Tabbed workspace: Daily / Small (weekly-sprint) / Large (monthly-quarterly), milestone checklists with animated progress bars, **P1–P4 priority chips** on daily goals and **"N days overdue"** badges on missed small goals |
-| Finance | `src/pages/Finance.jsx` | Quick-entry logger (date, title, 5 categories, amount), Today & This-Month summary cards, category donut, grouped monthly log, plus **editable monthly budget limits** (overall + per category) with progress bars that turn amber at 80% and rose when over |
+| Finance | `src/pages/Finance.jsx` | Amounts in **PKR** (`Rs`): quick-entry logger (date, title, 5 categories, amount), Today & This-Month summary cards, category donut, grouped monthly log, plus **editable monthly budget limits** (overall + per category) with progress bars that turn amber at 80% and rose when over |
 | Notes | `src/pages/Notes.jsx` | Markdown editor with toolbar (bold, italic, code, headings, bullets, code blocks), instant search, tag filtering |
 
 ## Smart features
@@ -46,6 +46,7 @@ npm run preview  # serve the production build
   daily goals, and explicit "N days overdue" cards on past-due sprints.
 - **Budget limits** — set an overall and per-category monthly cap on the
   Finance page; bars warn at 80% and go red past the limit.
+  All money amounts are formatted in **Pakistani Rupees (Rs)**.
 
 ## Threshold color logic
 

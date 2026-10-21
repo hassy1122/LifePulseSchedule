@@ -361,7 +361,7 @@ function BudgetBar({ spent, limit, barColor }) {
           style={{ width: `${pctUsed}%`, backgroundColor: color }}
         />
       </div>
-      <span className={`w-24 text-right text-[11px] font-bold tabular-nums ${over ? "text-rose-600" : "text-slate-500"}`}>
+      <span className={`w-36 text-right text-[11px] font-bold tabular-nums ${over ? "text-rose-600" : "text-slate-500"}`}>
         {limit != null && limit > 0
           ? `${fmtMoney(Math.round(spent * 100) / 100)} / ${fmtMoney(limit)}`
           : fmtMoney(Math.round(spent * 100) / 100)}
