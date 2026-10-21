@@ -15,7 +15,7 @@ import {
 import { ChevronLeft, ChevronRight, Award, Flame, CircleCheck } from "lucide-react"
 import { dailyPct } from "../lib/seed"
 import { bandFor } from "../lib/theme"
-import { dateKey, fmtMonthLong, monthKeyOf, shiftMonth } from "../lib/utils"
+import { fmtMonthLong, monthKeyOf, shiftMonth } from "../lib/utils"
 import { PageHeader } from "../components/ui"
 
 const CATEGORY_META = [
@@ -26,8 +26,8 @@ const CATEGORY_META = [
 
 const pct = (n) => (n == null ? null : Math.round(n * 10) / 10)
 
-export default function Analytics({ data }) {
-  const [initialMonth] = useState(() => monthKeyOf(dateKey(new Date())))
+export default function Analytics({ data, todayKey }) {
+  const [initialMonth] = useState(() => monthKeyOf(todayKey))
   const [month, setMonth] = useState(initialMonth)
 
   const monthData = useMemo(() => {

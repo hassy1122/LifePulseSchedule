@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { Bus, Plus, CircleDollarSign, Receipt, CalendarDays, Trash2, Utensils, Wrench, Wallet, Laptop } from "lucide-react"
-import { dateKey, fmtDayShort, fmtMoney, monthKeyOf, uid } from "../lib/utils"
+import { fmtDayShort, fmtMoney, monthKeyOf, uid } from "../lib/utils"
 
 const CATEGORIES = [
   { id: "Food", icon: Utensils, color: "#F59E0B", tint: "bg-amber-50 text-amber-600" },
@@ -13,8 +13,7 @@ const CATEGORIES = [
 
 const catMeta = (id) => CATEGORIES.find((c) => c.id === id) || CATEGORIES[4]
 
-export default function Finance({ data, patch }) {
-  const [todayKey] = useState(() => dateKey(new Date()))
+export default function Finance({ data, patch, todayKey }) {
   const month = monthKeyOf(todayKey)
   const [form, setForm] = useState({ date: todayKey, title: "", category: "Food", amount: "" })
   const txs = data.finance.transactions

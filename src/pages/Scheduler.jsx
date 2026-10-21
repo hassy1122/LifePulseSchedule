@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { CalendarPlus, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react"
 import { CATEGORY_COLORS, PRESETS, STATUSES } from "../lib/theme"
-import { addDays, dateKey, fmtDayLong, fmtDayShort, fmtHour, uid } from "../lib/utils"
+import { addDays, fmtDayLong, fmtDayShort, fmtHour, uid } from "../lib/utils"
 import { Badge, EmptyState, PageHeader } from "../components/ui"
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
@@ -213,8 +213,7 @@ function ItemPopover({ editing, blocks, onSubmit, onClose }) {
 
 /* ---------------- Page ---------------- */
 
-export default function Scheduler({ data, patch }) {
-  const [todayKey] = useState(() => dateKey(new Date()))
+export default function Scheduler({ data, patch, todayKey }) {
   const [viewKey, setViewKey] = useState(todayKey)
   const [editor, setEditor] = useState(null) // null | { block?: scheduler item }
   const scroller = useRef(null)

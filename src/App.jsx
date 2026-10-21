@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Sidebar, { MobileBar } from "./components/Sidebar"
 import { usePersistentState, patchState } from "./lib/storage"
 import { buildSeedData } from "./lib/seed"
@@ -15,6 +15,22 @@ const STORAGE_KEY = "lifepulse-data-v1"
 export default function App() {
   const [page, setPage] = useState("scheduler")
   const [data, setData] = usePersistentState(STORAGE_KEY, buildSeedData)
+  const [todayKey, setTodayKey] = useState(() => dateKey(new Date()))
+
+  // Keep "today" accurate even when the app stays open across midnight:
+  // re-check every 30s and whenever the tab becomes visible again.
+  useEffect(() => {
+    const tick = () => {
+      const next = dateKey(new Date())
+      setTodayKey((prev) => (prev === next ? prev : next))
+    }
+    const id = window.setInterval(tick, 30_000)
+    document.addEventListener("visibilitychange", tick)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener("visibilitychange", tick)
+    }
+  }, [])
 
   const patch = useCallback(
     (mutator) => patchState(setData, mutator),
@@ -67,11 +83,11 @@ export default function App() {
 
       <main className="min-h-screen md:pl-64" id="main">
         <div className="mx-auto max-w-6xl px-5 pt-10 pb-28 sm:px-8 md:pb-16" key={page}>
-          {page === "scheduler" && <Scheduler data={data} patch={patch} />}
-          {page === "daily" && <Daily data={data} patch={patch} />}
-          {page === "analytics" && <Analytics data={data} />}
+          {page === "scheduler" && <Scheduler data={data} patch={patch} todayKey={todayKey} />}
+          {page === "daily" && <Daily data={data} patch={patch} todayKey={todayKey} />}
+          {page === "analytics" && <Analytics data={data} todayKey={todayKey} />}
           {page === "goals" && <Goals data={data} patch={patch} />}
-          {page === "finance" && <Finance data={data} patch={patch} />}
+          {page === "finance" && <Finance data={data} patch={patch} todayKey={todayKey} />}
           {page === "notes" && <Notes data={data} patch={patch} />}
         </div>
       </main>

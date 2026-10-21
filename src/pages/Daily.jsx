@@ -1,8 +1,7 @@
-import { useState } from "react"
 import { Droplets, Dumbbell, Check, CodeXml, Moon, Footprints, Flame } from "lucide-react"
 import { dailyDoneCount, dailyPct, TRACKERS } from "../lib/seed"
 import { bandFor } from "../lib/theme"
-import { dateKey } from "../lib/utils"
+import { fmtDayLong } from "../lib/utils"
 import { EmptyState, PageHeader, Stepper } from "../components/ui"
 
 const TRACKER_ICONS = {
@@ -49,8 +48,7 @@ function ProgressRing({ pct }) {
   )
 }
 
-export default function Daily({ data, patch }) {
-  const [todayKey] = useState(() => dateKey(new Date()))
+export default function Daily({ data, patch, todayKey }) {
   const entry = data.daily[todayKey]
   const done = dailyDoneCount(entry)
   const pct = dailyPct(entry)
@@ -79,6 +77,9 @@ export default function Daily({ data, patch }) {
         {/* Score card */}
         <section className="card flex flex-col items-center justify-center text-center" aria-labelledby="today-score">
           <h2 id="today-score" className="section-title self-start">Today's score</h2>
+          <p className="self-start text-[11px] font-semibold text-slate-400" aria-label="Current date">
+            {fmtDayLong(todayKey)}
+          </p>
           <div className="my-5">
             <ProgressRing pct={pct} />
           </div>
