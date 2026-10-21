@@ -23,7 +23,7 @@ npm run preview  # serve the production build
 
 | Module | File | Highlights |
 | --- | --- | --- |
-| Master Scheduler | `src/pages/Scheduler.jsx` | Interactive 24-hour planner, quick-add presets (Fajar, Zohar, Asr, Maghrib, Isha, Morning Walk, Exercise/Gym, Deep Work/Coding, Reading), 4-state status toggles (Pending · In Progress · Completed · Skipped) |
+| Master Scheduler | `src/pages/Scheduler.jsx` | Interactive 24-hour planner, quick-add presets (Fajar, Zohar, Asr, Maghrib, Isha, Morning Walk, Exercise/Gym, Deep Work/Coding, Reading) tucked into the **Add item** popover, fully custom items (title / category / start time / duration), per-item **add · edit · remove**, and 4-state status toggles (Pending · In Progress · Completed · Skipped) |
 | Daily Sheet | `src/pages/Daily.jsx` | 5 tracked habits (Prayers, Exercise, Walk, Coding hours, Water), live completion ring, real-time `Completion % = Completed / Total × 100` |
 | Analytics | `src/pages/Analytics.jsx` | Month navigation, daily completion % area chart with 7-day rolling average, category-consistency donut (Prayers vs Exercise vs Coding), monthly average score card |
 | Goals | `src/pages/Goals.jsx` | Tabbed workspace: Daily / Small (weekly-sprint) / Large (monthly-quarterly), milestone checklists with animated progress bars |
