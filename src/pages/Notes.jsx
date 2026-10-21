@@ -208,7 +208,7 @@ const TOOLBAR = [
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(n.id) } }}
                       aria-current={active ? "true" : undefined}
                       className={`w-full cursor-pointer rounded-2xl border p-3.5 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 ${
-                        active ? "border-violet-200 bg-violet-50/70 shadow-sm" : "border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-sm"
+                        active ? "border-violet-200 bg-violet-50/70 shadow-sm" : "border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-800/50"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -247,7 +247,7 @@ const TOOLBAR = [
               {/* Title + meta */}
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <input
-                  className="w-full min-w-0 flex-1 border-0 bg-transparent p-0 text-lg font-extrabold tracking-tight text-slate-900 placeholder:text-slate-300 focus:outline-none focus-visible:outline-none"
+                  className="w-full min-w-0 flex-1 border-0 bg-transparent p-0 text-lg font-extrabold tracking-tight text-slate-900 placeholder:text-slate-300 focus:outline-none focus-visible:outline-none dark:placeholder:text-slate-600"
                   value={selected.title}
                   onChange={(e) => modify(selected.id, (n) => { n.title = e.target.value })}
                   placeholder="Note title"
@@ -285,7 +285,7 @@ const TOOLBAR = [
               </div>
 
               {preview ? (
-                <div className="scroll-slim min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+                <div className="scroll-slim min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:bg-slate-950/40">
                   <Markdown src={selected.body || "Nothing to preview yet."} />
                 </div>
               ) : (
@@ -307,7 +307,7 @@ const TOOLBAR = [
                   </div>
                   <textarea
                     ref={taRef}
-                    className="scroll-slim min-h-0 flex-1 resize-none rounded-2xl border border-slate-200 bg-[#FBFCFE] p-4 font-mono text-sm leading-relaxed text-slate-800 transition placeholder:text-slate-300 focus-visible:border-violet-300 focus-visible:outline-2 focus-visible:outline-violet-500"
+                    className="scroll-slim min-h-0 flex-1 resize-none rounded-2xl border border-slate-200 bg-[#FBFCFE] p-4 font-mono text-sm leading-relaxed text-slate-800 transition placeholder:text-slate-300 focus-visible:border-violet-300 focus-visible:outline-2 focus-visible:outline-violet-500 dark:border-slate-800 dark:bg-slate-950/60 dark:placeholder:text-slate-600"
                     value={selected.body}
                     onChange={(e) => modify(selected.id, (n) => { n.body = e.target.value })}
                     placeholder={"Write here… supports **markdown**, `inline code`, lists and ```code blocks```"}

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { CalendarPlus, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react"
-import { CATEGORY_COLORS, PRESETS, STATUSES } from "../lib/theme"
+import { CalendarPlus, ChevronLeft, ChevronRight, Flag, Pencil, Plus, Trash2, X } from "lucide-react"
+import { CATEGORY_COLORS, PRESETS, STATUSES, PRIORITIES, priorityOf } from "../lib/theme"
 import { addDays, fmtDayLong, fmtDayShort, fmtHour, uid } from "../lib/utils"
-import { Badge, EmptyState, PageHeader } from "../components/ui"
+import { Badge, EmptyState, PageHeader, Switch } from "../components/ui"
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
 const EMPTY_BLOCKS = []
@@ -64,6 +64,7 @@ function ItemPopover({ editing, blocks, onSubmit, onClose }) {
   const [cat, setCat] = useState(editing?.cat ?? "Other")
   const [start, setStart] = useState(decToTime(editing?.start ?? 9))
   const [dur, setDur] = useState(String(editing?.dur ?? 1))
+  const [priority, setPriority] = useState(editing?.priority ?? null)
   const titleRef = useRef(null)
   const isEdit = Boolean(editing)
 
@@ -77,7 +78,7 @@ function ItemPopover({ editing, blocks, onSubmit, onClose }) {
   function submit(e) {
     e.preventDefault()
     if (!title.trim()) return
-    onSubmit({ title: title.trim(), cat, start: timeToDec(start), dur: Number(dur) })
+    onSubmit({ title: title.trim(), cat, start: timeToDec(start), dur: Number(dur), priority })
   }
 
   return (
@@ -173,6 +174,30 @@ function ItemPopover({ editing, blocks, onSubmit, onClose }) {
             </div>
           </fieldset>
 
+          <fieldset className="mb-4">
+            <legend className="mb-1.5 text-xs font-bold text-slate-600">Priority</legend>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Priority">
+              {PRIORITIES.map((p) => {
+                const active = priority === p.id
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setPriority(active ? null : p.id)}
+                    className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet-500 ${
+                      active ? p.chip : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Flag className="h-3 w-3" strokeWidth={2.4} aria-hidden="true" />
+                    {p.label}
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
+
           <div className="mb-5 grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-xs font-bold text-slate-600" htmlFor="item-start">
@@ -217,6 +242,7 @@ export default function Scheduler({ data, patch, todayKey }) {
   const [viewKey, setViewKey] = useState(todayKey)
   const [editor, setEditor] = useState(null) // null | { block?: scheduler item }
   const [nowHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60)
+  const [notice, setNotice] = useState(null)
   const scroller = useRef(null)
 
   const blocks = data.scheduler?.[viewKey] ?? EMPTY_BLOCKS
@@ -249,14 +275,54 @@ export default function Scheduler({ data, patch, todayKey }) {
       } else if (item.fromPreset) {
         if (arr.some((x) => x.presetId === item.id)) return
         const { fromPreset: _ignored, ...preset } = item
-        arr.push({ ...preset, id: uid("sb"), status: "pending" })
+        arr.push({ ...preset, id: uid("sb"), priority: null, status: "pending" })
       } else {
-        arr.push({ id: uid("sb"), title: item.title, cat: item.cat, start: item.start, dur: item.dur, status: "pending" })
+        arr.push({
+          id: uid("sb"),
+          title: item.title,
+          cat: item.cat,
+          start: item.start,
+          dur: item.dur,
+          priority: item.priority ?? null,
+          status: "pending",
+        })
       }
       arr.sort((a, b) => a.start - b.start)
     })
     if (item.fromPreset) return // keep popover open so several presets can be added
     setEditor(null)
+  }
+
+  /** Toggle reminders, asking the browser for permission the first time. */
+  function setReminders(enabled) {
+    setNotice(null)
+    if (!enabled) {
+      patch((d) => {
+        ;(d.settings ??= { reminders: false }).reminders = false
+      })
+      return
+    }
+    if (typeof Notification === "undefined") {
+      setNotice("This browser doesn't support notifications.")
+      return
+    }
+    if (Notification.permission === "granted") {
+      patch((d) => {
+        ;(d.settings ??= { reminders: false }).reminders = true
+      })
+      return
+    }
+    Notification.requestPermission()
+      .then((p) => {
+        if (p === "granted") {
+          patch((d) => {
+            ;(d.settings ??= { reminders: false }).reminders = true
+          })
+        } else {
+          setNotice("Reminders need notification permission — allow it in the browser prompt.")
+        }
+      })
+      .catch(() => setNotice("Could not request notification permission."))
   }
 
   function setStatus(id, status) {
@@ -328,6 +394,35 @@ export default function Scheduler({ data, patch, todayKey }) {
           />
         ) : null}
 
+        {/* Automation: routine auto-fill + reminders */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-3"
+          role="group"
+          aria-label="Automation settings"
+        >
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Switch
+              checked={data.routines?.enabled !== false}
+              onChange={(v) =>
+                patch((d) => {
+                  ;(d.routines ??= { enabled: true }).enabled = v
+                })
+              }
+              label="Auto-fill routine daily"
+            />
+            <Switch
+              checked={data.settings?.reminders === true}
+              onChange={setReminders}
+              label="Slot-start reminders"
+            />
+          </div>
+          {notice ? (
+            <p role="status" className="text-[11px] font-semibold text-rose-600">
+              {notice}
+            </p>
+          ) : null}
+        </div>
+
         <div ref={scroller} className="scroll-slim max-h-[560px] overflow-y-auto px-6 py-4">
           {blocks.length === 0 ? (
             <EmptyState
@@ -366,10 +461,11 @@ export default function Scheduler({ data, patch, todayKey }) {
                         row.map((b) => {
                           const st = STATUSES.find((s) => s.id === b.status)
                           const cat = CATEGORY_COLORS[b.cat] || CATEGORY_COLORS.Other
+                          const pr = priorityOf(b.priority)
                           return (
                             <article
                               key={b.id + b.start}
-                              className="mb-2 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-soft"
+                              className="mb-2 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-soft dark:border-slate-800 dark:bg-slate-800/50"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex min-w-0 items-center gap-3">
@@ -379,6 +475,14 @@ export default function Scheduler({ data, patch, todayKey }) {
                                   >
                                     {b.cat}
                                   </span>
+                                  {pr ? (
+                                    <span
+                                      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${pr.chip}`}
+                                    >
+                                      <Flag className="h-2.5 w-2.5" strokeWidth={2.6} aria-hidden="true" />
+                                      {pr.label}
+                                    </span>
+                                  ) : null}
                                 </div>
                                 <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${st.chip}`}>
                                   {st.label}

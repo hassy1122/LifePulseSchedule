@@ -28,6 +28,25 @@ export default function Finance({ data, patch, todayKey }) {
   }, [txs, month])
   const pieTotal = byCategory.reduce((a, b) => a + b.value, 0)
 
+  /** Update the overall monthly limit (or clear it with an empty value). */
+  function setMonthlyLimit(raw) {
+    const value = raw === "" ? null : Number(raw)
+    patch((d) => {
+      const budget = (d.finance.budget ??= {})
+      budget.monthly = Number.isFinite(value) ? Math.max(0, value) : null
+    })
+  }
+
+  /** Update (or clear) a category's monthly limit. */
+  function setCategoryLimit(cat, raw) {
+    const value = raw === "" ? null : Number(raw)
+    patch((d) => {
+      const budget = (d.finance.budget ??= { categories: {} })
+      budget.categories ??= {}
+      budget.categories[cat] = Number.isFinite(value) ? Math.max(0, value) : null
+    })
+  }
+
   /* group the month's transactions newest-first */
   const grouped = useMemo(() => {
     const list = txs
@@ -208,6 +227,67 @@ export default function Finance({ data, patch, todayKey }) {
             </div>
           </section>
 
+          {/* Budget limits */}
+          <section className="card" aria-label="Monthly budgets">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="section-title">Budget limits</h2>
+              <p className="text-[11px] font-medium text-slate-400">Leave empty for no limit</p>
+            </div>
+
+            {/* Overall */}
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/40">
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <span className="text-sm font-bold text-slate-700">Everything</span>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="input !h-8 w-20 !px-2 text-right"
+                    value={data.finance?.budget?.monthly ?? ""}
+                    onChange={(e) => setMonthlyLimit(e.target.value)}
+                    aria-label="Overall monthly budget limit"
+                    placeholder="—"
+                  />
+                  / mo
+                </label>
+              </div>
+              <BudgetBar spent={pieTotal} limit={data.finance?.budget?.monthly ?? null} />
+            </div>
+
+            {/* Per category */}
+            <ul className="mt-3 space-y-2">
+              {byCategory.map((c) => {
+                const meta = CATEGORIES.find((x) => x.id === c.name)
+                const limit = data.finance?.budget?.categories?.[c.name] ?? null
+                return (
+                  <li key={c.name} className="rounded-2xl border border-slate-100 p-3 dark:border-slate-800">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden="true" />
+                        {c.name}
+                      </span>
+                      <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          className="input !h-7 w-20 !px-2 text-right"
+                          value={limit ?? ""}
+                          onChange={(e) => setCategoryLimit(c.name, e.target.value)}
+                          aria-label={`${c.name} monthly budget limit`}
+                          placeholder="—"
+                        />
+                        / mo
+                      </label>
+                    </div>
+                    <BudgetBar spent={c.value} limit={limit} barColor={meta?.color} />
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+
           {/* Transaction list */}
           <section className="card" aria-label="Transaction history">
             <h2 className="mb-4 section-title">This month's log</h2>
@@ -227,7 +307,7 @@ export default function Finance({ data, patch, todayKey }) {
                       {g.items.map((t) => {
                         const meta = catMeta(t.category)
                         return (
-                          <li key={t.id} className="flex items-center gap-3 border-b border-slate-100 bg-white px-4 py-2.5 last:border-b-0">
+                          <li key={t.id} className="flex items-center gap-3 border-b border-slate-100 bg-white px-4 py-2.5 last:border-b-0 dark:bg-slate-800/40">
                             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${meta.tint}`} aria-hidden="true">
                               <meta.icon className="h-4 w-4" strokeWidth={2.2} />
                             </span>
@@ -265,4 +345,28 @@ export default function Finance({ data, patch, todayKey }) {
 
 function sum(list) {
   return Math.round(list.reduce((a, t) => a + t.amount, 0) * 100) / 100
+}
+
+/** Progress bar for spend vs. limit; turns amber at 80% and rose at 100%. */
+function BudgetBar({ spent, limit, barColor }) {
+  const pctUsed = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0
+  const over = limit != null && limit > 0 && spent >= limit
+  const warn = !over && limit != null && limit > 0 && spent >= limit * 0.8
+  const color = over ? "#F43F5E" : warn ? "#F59E0B" : barColor || "#8B5CF6"
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-900">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pctUsed}%`, backgroundColor: color }}
+        />
+      </div>
+      <span className={`w-24 text-right text-[11px] font-bold tabular-nums ${over ? "text-rose-600" : "text-slate-500"}`}>
+        {limit != null && limit > 0
+          ? `${fmtMoney(Math.round(spent * 100) / 100)} / ${fmtMoney(limit)}`
+          : fmtMoney(Math.round(spent * 100) / 100)}
+        {over ? " over" : ""}
+      </span>
+    </div>
+  )
 }

@@ -15,7 +15,7 @@ import {
 import { ChevronLeft, ChevronRight, Award, Flame, CircleCheck, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { dailyPct } from "../lib/seed"
 import { bandFor } from "../lib/theme"
-import { fmtMonthLong, monthKeyOf, shiftMonth } from "../lib/utils"
+import { addDays, fmtDayShort, fmtMonthLong, keyToDate, monthKeyOf, shiftMonth } from "../lib/utils"
 import { PageHeader } from "../components/ui"
 
 const CATEGORY_META = [
@@ -26,7 +26,22 @@ const CATEGORY_META = [
 
 const pct = (n) => (n == null ? null : Math.round(n * 10) / 10)
 
-export default function Analytics({ data, todayKey }) {
+const HEAT_DAYS = 105
+const HEAT_LEGEND = [
+  { label: "No data", cls: "bg-slate-100 dark:bg-slate-800" },
+  { label: "< 75%", cls: "bg-rose-400" },
+  { label: "≥ 75%", cls: "bg-emerald-500" },
+  { label: "100%", cls: "bg-violet-500" },
+]
+
+function heatCellClass(p) {
+  if (p == null) return "bg-slate-100 dark:bg-slate-800"
+  if (p >= 100) return "bg-violet-500"
+  if (p >= 75) return "bg-emerald-500"
+  return "bg-rose-400"
+}
+
+export default function Analytics({ data, todayKey, isDark = false }) {
   const [initialMonth] = useState(() => monthKeyOf(todayKey))
   const [month, setMonth] = useState(initialMonth)
 
@@ -57,6 +72,21 @@ export default function Analytics({ data, todayKey }) {
   const goodDays = scored.filter((d) => d.pct >= 75 && d.pct < 100).length
 
   const band = bandFor(avg)
+
+  /* Recharts colors adjusted for the active theme */
+  const chartGrid = isDark ? "#334155" : "#E2E8F0"
+  const chartTick = isDark ? "#64748B" : "#94A3B8"
+  const tooltipProps = {
+    contentStyle: {
+      borderRadius: 12,
+      border: `1px solid ${isDark ? "#334155" : "#E2E8F0"}`,
+      background: isDark ? "#0f172a" : "#FFFFFF",
+      fontSize: 12,
+      boxShadow: "0 8px 24px -12px rgba(15,23,42,.2)",
+    },
+    itemStyle: { color: isDark ? "#a8b3c7" : "#334155" },
+    labelStyle: { color: isDark ? "#e2e8f0" : "#0f172a", fontWeight: 700 },
+  }
 
   /* month-over-month comparison */
   const prevMonth = shiftMonth(month, -1)
@@ -91,6 +121,19 @@ export default function Analytics({ data, todayKey }) {
     return out
   }, [month, data.daily])
   const totalHits = consistency.reduce((a, c) => a + c.value, 0)
+
+  /* GitHub-style heatmap of the last ~15 weeks, aligned to Sunday. */
+  const heat = useMemo(() => {
+    const oldest = addDays(todayKey, -(HEAT_DAYS - 1))
+    const cells = []
+    for (let i = 0; i < keyToDate(oldest).getDay(); i++) cells.push({ blank: true })
+    for (let i = 0; i < HEAT_DAYS; i++) {
+      const key = addDays(oldest, i)
+      const entry = data.daily[key]
+      cells.push({ key, pct: entry ? dailyPct(entry) : null })
+    }
+    return cells
+  }, [data.daily, todayKey])
 
   return (
     <div>
@@ -155,13 +198,13 @@ export default function Analytics({ data, todayKey }) {
                   <stop offset="100%" stopColor="#A855F7" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94A3B8" }} tickLine={false} axisLine={{ stroke: "#E2E8F0" }} interval={2} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94A3B8" }} tickLine={false} axisLine={false} width={44} unit="%" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} vertical={false} />
+              <XAxis dataKey="day" tick={{ fontSize: 11, fill: chartTick }} tickLine={false} axisLine={{ stroke: chartGrid }} interval={2} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: chartTick }} tickLine={false} axisLine={false} width={44} unit="%" />
               <Tooltip
+                {...tooltipProps}
                 formatter={(v, name) => [`${v}%`, name === "pct" ? "Daily score" : "7-day avg"]}
                 labelFormatter={(d) => `${fmtMonthLong(month).split(" ")[0]} ${d}`}
-                contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", fontSize: 12, boxShadow: "0 8px 24px -12px rgba(15,23,42,.2)" }}
               />
               <Area
                 type="monotone"
@@ -204,8 +247,8 @@ export default function Analytics({ data, todayKey }) {
                   ))}
                 </Pie>
                 <Tooltip
+                  {...tooltipProps}
                   formatter={(v, name) => [`${v} days`, name]}
-                  contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", fontSize: 12 }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -215,7 +258,7 @@ export default function Analytics({ data, todayKey }) {
               const share = totalHits ? Math.round((c.value / totalHits) * 100) : 0
               const consistencyPct = c.days ? pct((c.value / c.days) * 100) : 0
               return (
-                <li key={c.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+                <li key={c.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/40">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden="true" />
@@ -225,7 +268,7 @@ export default function Analytics({ data, todayKey }) {
                       {c.value}/{c.days} days
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white">
+                  <div className="h-2 overflow-hidden rounded-full bg-white dark:bg-slate-900">
                     <div className="h-full rounded-full transition-all duration-700" style={{ width: `${consistencyPct}%`, backgroundColor: c.color }} />
                   </div>
                   <p className="mt-1.5 text-[11px] font-semibold text-slate-400">{consistencyPct}% consistency · {share}% of all category hits</p>
@@ -233,6 +276,52 @@ export default function Analytics({ data, todayKey }) {
               )
             })}
           </ul>
+        </div>
+      </section>
+
+      {/* Habit heatmap — last 15 weeks, colored by completion band */}
+      <section className="card mt-6" aria-labelledby="heatmap-heading">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 id="heatmap-heading" className="text-sm font-bold text-slate-800">Consistency heatmap</h2>
+            <p className="mt-0.5 text-xs font-medium text-slate-400">
+              Last 15 weeks of daily completion · starts Sunday
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400">
+            <span>Less</span>
+            {HEAT_LEGEND.map((l) => (
+              <span key={l.label} className="flex items-center gap-1">
+                <span className={`h-3 w-3 rounded-[4px] ${l.cls}`} aria-hidden="true" />
+                <span className="sr-only">{l.label}</span>
+              </span>
+            ))}
+            <span>
+              More
+              <span className="sr-only"> · No data, under 75%, 75% or more, 100%</span>
+            </span>
+          </div>
+        </div>
+        <div className="scroll-slim overflow-x-auto pb-1">
+          <div
+            className="grid grid-flow-col grid-rows-7 gap-[3px]"
+            role="img"
+            aria-label={`Habit heatmap of the last 15 weeks, colored by daily completion band`}
+          >
+            {heat.map((cell, i) =>
+              cell.blank ? (
+                <span key={`blank-${i}`} className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <span
+                  key={cell.key}
+                  title={`${fmtDayShort(cell.key)} — ${cell.pct == null ? "no data" : `${cell.pct}%`}`}
+                  className={`h-3.5 w-3.5 rounded-[4px] ${heatCellClass(cell.pct)} ${
+                    cell.key === todayKey ? "outline outline-2 outline-offset-1 outline-violet-500" : ""
+                  }`}
+                />
+              ),
+            )}
+          </div>
         </div>
       </section>
     </div>

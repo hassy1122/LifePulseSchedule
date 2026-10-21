@@ -67,16 +67,19 @@ export function buildSeedData() {
   const data = {
     scheduler: {},
     daily: {},
+    routines: { enabled: true },
+    settings: { reminders: false },
     goals: {
       daily: [
-        { id: "dg-1", title: "Plan tomorrow before Isha", done: true },
-        { id: "dg-2", title: "Journal 5 minutes", done: false },
-        { id: "dg-3", title: "Inbox to zero", done: false },
+        { id: "dg-1", title: "Plan tomorrow before Isha", done: true, priority: 4 },
+        { id: "dg-2", title: "Journal 5 minutes", done: false, priority: 3 },
+        { id: "dg-3", title: "Inbox to zero", done: false, priority: 2 },
       ],
       small: [
-        { id: "sg-1", title: "Finish analytics module UI", dueOffset: 2, done: false },
-        { id: "sg-2", title: "Run 5K without stopping", dueOffset: 4, done: false },
-        { id: "sg-3", title: "Read 40 pages of Deep Work", dueOffset: 1, done: true },
+        { id: "sg-1", title: "Finish analytics module UI", dueOffset: 2, done: false, priority: 1 },
+        { id: "sg-2", title: "Run 5K without stopping", dueOffset: 4, done: false, priority: 3 },
+        { id: "sg-3", title: "Read 40 pages of Deep Work", dueOffset: 1, done: true, priority: 4 },
+        { id: "sg-4", title: "Sort the photo backup drive", dueOffset: -2, done: false, priority: 2 },
       ],
       large: [
         {
@@ -108,7 +111,13 @@ export function buildSeedData() {
         },
       ],
     },
-    finance: { transactions: [] },
+    finance: {
+      transactions: [],
+      budget: {
+        monthly: 800,
+        categories: { Food: 300, Tech: 150, Utilities: 200, Travel: 100, Misc: 80 },
+      },
+    },
     notes: [
       {
         id: "n-1",

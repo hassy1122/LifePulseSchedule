@@ -35,7 +35,7 @@ export default function Daily({ data, patch, todayKey }) {
 
   const rowStyle = (ok) =>
     `flex items-center justify-between gap-3 rounded-2xl border p-4 transition focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-violet-500 ${
-      ok ? "border-transparent bg-[#F0FDF4]" : "border-slate-200/80 bg-white"
+      ok ? "border-transparent bg-[#F0FDF4]" : "border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-800/50"
     }`
 
   return (
@@ -104,7 +104,7 @@ export default function Daily({ data, patch, todayKey }) {
                       className={`flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 ${
                         ok
                           ? "bg-[#DCFCE7] text-[#166534] shadow-sm"
-                          : "border border-slate-200 bg-white text-slate-500 hover:border-violet-300 hover:text-violet-700"
+                          : "border border-slate-200 bg-white text-slate-500 hover:border-violet-300 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400 dark:hover:text-violet-300"
                       }`}
                     >
                       {ok ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /> : null}

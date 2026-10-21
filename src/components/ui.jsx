@@ -52,6 +52,32 @@ export function ProgressBar({ pct, className = "", stroke }) {
   )
 }
 
+/** Accessible on/off toggle used for app settings. */
+export function Switch({ checked, onChange, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="group inline-flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
+    >
+      <span
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
+          checked ? "bg-violet-600" : "bg-slate-300 dark:bg-slate-700"
+        }`}
+      >
+        <span
+          className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+            checked ? "translate-x-4" : ""
+          }`}
+        />
+      </span>
+      {label && <span className="text-xs font-semibold text-slate-500">{label}</span>}
+    </button>
+  )
+}
+
 /** Circular completion indicator shared by the Today and Daily pages. */
 export function ProgressRing({ pct }) {
   const band = bandFor(pct)

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     sans-serif;
@@ -19,34 +21,66 @@
     background-attachment: fixed;
     min-height: 100vh;
   }
+
+  .dark body {
+    color: #e2e8f0;
+    background:
+      radial-gradient(1100px 520px at 88% -12%, rgba(139, 92, 246, 0.12), transparent 62%),
+      radial-gradient(900px 480px at -8% 8%, rgba(56, 189, 248, 0.08), transparent 60%),
+      radial-gradient(800px 420px at 50% 110%, rgba(217, 70, 239, 0.07), transparent 65%),
+      #0b1120;
+  }
+
+  .dark body .scroll-slim {
+    scrollbar-color: #334155 transparent;
+  }
 }
 
 /* ---------- Reusable component classes ---------- */
 @layer components {
   .card {
-    @apply rounded-2xl border border-slate-200/80 bg-white p-6 shadow-soft;
+    @apply rounded-2xl border border-slate-200/80 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-900 dark:shadow-none dark:ring-1 dark:ring-slate-800/60;
   }
 
   .section-title {
-    @apply text-xs font-bold tracking-[0.14em] text-slate-400 uppercase;
+    @apply text-xs font-bold tracking-[0.14em] text-slate-400 uppercase dark:text-slate-500;
   }
 
   .icon-btn {
-    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500;
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200;
   }
 
   .input {
-    @apply h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus-visible:border-violet-300 focus-visible:outline-2 focus-visible:outline-violet-500;
+    @apply h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus-visible:border-violet-300 focus-visible:outline-2 focus-visible:outline-violet-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus-visible:border-violet-600;
   }
 
   .btn-primary {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:bg-violet-500 dark:hover:bg-violet-400;
   }
 
   .btn-soft {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-800;
   }
 }
+
+/* ---------- Dark-mode conveniences for recurring inline utility colors ---------- */
+.dark .text-slate-900 { color: #f8fafc; }
+.dark .text-slate-800 { color: #e2e8f0; }
+.dark .text-slate-700 { color: #cbd5e1; }
+.dark .text-slate-600 { color: #a8b3c7; }
+.dark .text-slate-500 { color: #94a3b8; }
+.dark .text-slate-300 { color: #64748b; }
+.dark .bg-slate-50 { background-color: rgba(30, 41, 59, 0.55); }
+.dark .bg-slate-100 { background-color: rgba(51, 65, 85, 0.55); }
+.dark .border-slate-100 { border-color: rgb(30, 41, 59); }
+.dark .hover\:bg-slate-50:hover { background-color: rgba(30, 41, 59, 0.55); }
+.dark .hover\:text-slate-800:hover { color: #f1f5f9; }
+.dark .hover\:bg-rose-50:hover { background-color: rgba(153, 27, 27, 0.15); }
+.dark .hover\:bg-violet-50:hover { background-color: rgba(139, 92, 246, 0.12); }
+.dark .hover\:bg-violet-100:hover { background-color: rgba(139, 92, 246, 0.2); }
+.dark .hover\:text-violet-700:hover { color: #c4b5fd; }
+
+.dark .scroll-slim::-webkit-scrollbar-thumb { background-color: #334155; }
 
 /* ---------- Slim scrollbars for the planner ---------- */
 .scroll-slim {

@@ -96,3 +96,16 @@ export const CATEGORY_COLORS = {
   Growth: { chip: "bg-amber-50 text-amber-700 border-amber-200", dot: "#F59E0B" },
   Other: { chip: "bg-slate-100 text-slate-600 border-slate-200", dot: "#94A3B8" },
 }
+
+/** Todoist-style priority scale (P1 = highest, P4 = idle). */
+export const PRIORITIES = [
+  { id: 1, label: "P1", chip: "bg-rose-50 text-rose-700 border-rose-200", dot: "#EF4444" },
+  { id: 2, label: "P2", chip: "bg-amber-50 text-amber-700 border-amber-200", dot: "#F59E0B" },
+  { id: 3, label: "P3", chip: "bg-sky-50 text-sky-700 border-sky-200", dot: "#38BDF8" },
+  { id: 4, label: "P4", chip: "bg-slate-100 text-slate-600 border-slate-200", dot: "#94A3B8" },
+]
+
+/** Priority lookup by numeric level. */
+export function priorityOf(level) {
+  return PRIORITIES.find((p) => p.id === level) || null
+}

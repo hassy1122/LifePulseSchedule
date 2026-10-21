@@ -1,8 +1,10 @@
 import { useState } from "react"
-import { Check, Plus, Target, Trash2 } from "lucide-react"
-import { pctOf, uid, fmtDayShort, addDays } from "../lib/utils"
-import { bandFor } from "../lib/theme"
+import { Check, Flag, Plus, Target, Trash2 } from "lucide-react"
+import { pctOf, uid, fmtDayShort, addDays, keyToDate } from "../lib/utils"
+import { bandFor, priorityOf } from "../lib/theme"
 import { Badge, EmptyState, PageHeader, ProgressBar } from "../components/ui"
+
+const DAY_MS = 86400000
 
 const TABS = [
   { id: "daily", label: "Daily Goals", hint: "Checked off every night" },
@@ -10,7 +12,7 @@ const TABS = [
   { id: "large", label: "Large Goals", hint: "Monthly / quarterly missions" },
 ]
 
-export default function Goals({ data, patch }) {
+export default function Goals({ data, patch, todayKey }) {
   const [tab, setTab] = useState("daily")
   const { daily, small, large } = data.goals
 
@@ -18,8 +20,17 @@ export default function Goals({ data, patch }) {
     if (!title.trim()) return
     patch((d) => {
       const g = { id: uid("g"), title: title.trim(), done: false }
-      if (list === "small") g.due = addDays(today(), 3)
+      if (list === "small") g.due = addDays(todayKey, 3)
       d.goals[list].push(g)
+    })
+  }
+
+  /** Cycle a goal's priority: unset → P1 → P2 → P3 → P4 → unset. */
+  function cyclePriority(list, id) {
+    patch((d) => {
+      const g = d.goals[list].find((x) => x.id === id)
+      if (!g) return
+      g.priority = g.priority == null ? 1 : g.priority >= 4 ? null : g.priority + 1
     })
   }
 
@@ -95,9 +106,10 @@ export default function Goals({ data, patch }) {
               <EmptyState icon={Target} title="No daily goals yet" hint="Small daily wins compound into big outcomes." />
             ) : (
               <ul className="divide-y divide-slate-100">
-                {daily.map((g) => (
+                {[...daily].sort((a, b) => (a.priority ?? 9) - (b.priority ?? 9)).map((g) => (
                   <li key={g.id} className="flex items-center gap-3 py-2.5">
                     <CheckRow done={g.done} onToggle={() => toggle("daily", g.id)} label={g.title} />
+                    <PriorityChip level={g.priority} onCycle={() => cyclePriority("daily", g.id)} />
                     <DelButton onClick={() => remove("daily", g.id)} label={`Delete ${g.title}`} />
                   </li>
                 ))}
@@ -118,17 +130,37 @@ export default function Goals({ data, patch }) {
               <EmptyState icon={Target} title="Sprint board is empty" hint="Add a goal scoped to this week or a short sprint." />
             ) : (
               <ul className="grid gap-3 md:grid-cols-2">
-                {small.map((g) => (
-                  <li
-                    key={g.id}
-                    className={`flex items-center justify-between gap-3 rounded-2xl border p-4 transition ${
-                      g.done ? "border-transparent bg-[#F0FDF4]" : "border-slate-200/80 bg-white"
-                    }`}
-                  >
-                    <CheckRow done={g.done} onToggle={() => toggle("small", g.id)} label={g.title} sub={g.due ? `Due ${fmtDayShort(g.due)}` : null} />
-                    <DelButton onClick={() => remove("small", g.id)} label={`Delete ${g.title}`} />
-                  </li>
-                ))}
+                {small.map((g) => {
+                  const overdue = !g.done && g.due && g.due < todayKey
+                  const overdueDays = overdue
+                    ? Math.round((keyToDate(todayKey) - keyToDate(g.due)) / DAY_MS)
+                    : 0
+                  return (
+                    <li
+                      key={g.id}
+                      className={`flex items-center justify-between gap-3 rounded-2xl border p-4 transition ${
+                        overdue
+                          ? "border-rose-200 bg-rose-50/70 dark:border-rose-900/60 dark:bg-rose-500/10"
+                          : g.done
+                            ? "border-transparent bg-[#F0FDF4]"
+                            : "border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-800/50"
+                      }`}
+                    >
+                      <CheckRow
+                        done={g.done}
+                        onToggle={() => toggle("small", g.id)}
+                        label={g.title}
+                        sub={g.due ? (overdue ? `Was due ${fmtDayShort(g.due)}` : `Due ${fmtDayShort(g.due)}`) : null}
+                      />
+                      {overdue ? (
+                        <span className="shrink-0 rounded-full bg-[#FEE2E2] px-2.5 py-1 text-[10px] font-bold text-[#991B1B] dark:bg-rose-500/15 dark:text-rose-300">
+                          {overdueDays} day{overdueDays === 1 ? "" : "s"} overdue
+                        </span>
+                      ) : null}
+                      <DelButton onClick={() => remove("small", g.id)} label={`Delete ${g.title}`} />
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>
@@ -208,6 +240,24 @@ function CheckRow({ done, onToggle, label, sub }) {
   )
 }
 
+/** Cycle chip displaying a goal's current priority; cycles P1..P4 → unset. */
+function PriorityChip({ level, onCycle }) {
+  const pr = priorityOf(level)
+  return (
+    <button
+      type="button"
+      onClick={onCycle}
+      aria-label={pr ? `Priority ${pr.label} — click to cycle` : "No priority set — click to set P1"}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition focus-visible:outline-2 focus-visible:outline-violet-500 ${
+        pr ? pr.chip : "border-slate-100 text-slate-300 hover:border-violet-200 hover:text-violet-600 dark:border-slate-700 dark:text-slate-500"
+      }`}
+    >
+      <Flag className="h-3 w-3" strokeWidth={2.4} aria-hidden="true" />
+      {pr ? pr.label : "P"}
+    </button>
+  )
+}
+
 function DelButton({ onClick, label, small }) {
   return (
     <button
@@ -254,9 +304,3 @@ function MilestoneInput({ onAdd }) {
   return <GoalInput onAdd={onAdd} placeholder="Add a milestone…" />
 }
 
-function today() {
-  const d = new Date()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${d.getFullYear()}-${m}-${day}`
-}
