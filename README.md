@@ -25,15 +25,15 @@ LifePulse ships as an installable Progressive Web App — an app icon, its own
 window, and full offline behaviour (all assets are precached by a service
 worker, and your data lives in LocalStorage regardless of connectivity).
 
+**Live site (GitHub Pages):** https://hassy1122.github.io/LifePulseSchedule/
+
+Open that URL on your phone → *Add to Home screen* — done.
+
 - **Desktop (Chrome/Edge/Brave):** while viewing the app, click the Install
   icon in the address bar (or Menu ▸ *Install LifePulse…*).
 - **Android:** open the site, tap the ⋮ menu ▸ *Add to Home screen /
   Install app*.
 - **iOS:** Safari ▸ Share ▸ *Add to Home Screen*.
-- Browsers only offer install over a **secure context** (HTTPS, or
-  `localhost`). Serving from another PC/phone over plain HTTP won't show the
-  prompt — deploy the `dist/` folder to any HTTPS static host (Netlify,
-  Vercel, Cloudflare Pages…) or tunnel it to install on a phone.
 - Updates apply automatically (`autoUpdate` service worker, caches cleaned).
 
 Commands:
@@ -42,6 +42,19 @@ Commands:
 npm run build    # generates dist/ incl. sw.js + manifest.webmanifest
 npm run preview  # serve the production build (e.g. http://localhost:4173)
 ```
+
+### Redeploying the live site
+
+The site is served by **GitHub Pages** from the `gh-pages` branch (repo is
+public, so Pages is free). The build uses a **relative base (`'./'`)** so it
+works both at a site root and under the `/LifePulseSchedule/` subpath.
+
+```bash
+npm run build
+npx gh-pages -d dist --message "Deploy LifePulse build to GitHub Pages [skip ci]"
+```
+
+GitHub then rebuilds the site automatically (~1 minute).
 
 > The 192/512 px icons are generated from `LifePulse.ico` once
 > (PowerShell/System.Drawing) and kept in `public/pwa-*.png`.
