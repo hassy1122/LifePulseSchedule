@@ -21,6 +21,7 @@ import { dailyPct, TRACKERS } from "../lib/seed"
 import { bandFor } from "../lib/theme"
 import { addDays, fmtDayLong, fmtHour, fmtMoney, monthKeyOf } from "../lib/utils"
 import { ProgressRing, PageHeader } from "../components/ui"
+import NamazCard from "../components/NamazCard"
 
 const QUICK_ACTIONS = [
   { id: "daily", label: "Daily Sheet", icon: CalendarCheck, tint: "bg-violet-50 text-violet-600" },
@@ -37,7 +38,7 @@ function greetingFor(hour) {
   return "Peaceful night"
 }
 
-export default function Today({ data, todayKey, onNavigate }) {
+export default function Today({ data, patch, todayKey, onNavigate }) {
   const [now] = useState(() => new Date())
   const nowHour = now.getHours() + now.getMinutes() / 60
 
@@ -169,6 +170,11 @@ export default function Today({ data, todayKey, onNavigate }) {
         <StatCard icon={ChartColumn} tint="bg-violet-50 text-violet-600" label={`${month.slice(5)} month average`} value={`${monthAvg}%`} />
         <StatCard icon={Wallet} tint="bg-emerald-50 text-emerald-600" label="Spent today" value={fmtMoney(Math.round(spentToday * 100) / 100)} />
         <StatCard icon={Target} tint="bg-sky-50 text-sky-600" label="Small goals open" value={openSprints} />
+      </div>
+
+      {/* Namaz — compact five-slot tracker (hidden until location is set) */}
+      <div className="mb-6">
+        <NamazCard data={data} patch={patch} todayKey={todayKey} compact />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

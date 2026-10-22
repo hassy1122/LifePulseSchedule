@@ -135,7 +135,7 @@ export default function App() {
 
       <main className="min-h-screen md:pl-64" id="main">
         <div className="mx-auto max-w-6xl px-5 pt-10 pb-28 sm:px-8 md:pb-16" key={page}>
-          {page === "today" && <Today data={data} todayKey={todayKey} onNavigate={setPage} />}
+          {page === "today" && <Today data={data} patch={patch} todayKey={todayKey} onNavigate={setPage} />}
           {page === "scheduler" && <Scheduler data={data} patch={patch} todayKey={todayKey} />}
           {page === "daily" && <Daily data={data} patch={patch} todayKey={todayKey} />}
           {page === "analytics" && <Analytics data={data} todayKey={todayKey} isDark={isDark} />}

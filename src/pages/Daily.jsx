@@ -3,6 +3,7 @@ import { dailyDoneCount, dailyPct, TRACKERS } from "../lib/seed"
 import { bandFor } from "../lib/theme"
 import { fmtDayLong } from "../lib/utils"
 import { EmptyState, PageHeader, ProgressRing, Stepper } from "../components/ui"
+import NamazCard from "../components/NamazCard"
 
 const TRACKER_ICONS = {
   prayers: Moon,
@@ -129,6 +130,11 @@ export default function Daily({ data, patch, todayKey }) {
             </p>
           ) : null}
         </section>
+      </div>
+
+      {/* Namaz — dedicated five-slot tracker with live prayer times */}
+      <div className="mt-6">
+        <NamazCard data={data} patch={patch} todayKey={todayKey} />
       </div>
     </div>
   )

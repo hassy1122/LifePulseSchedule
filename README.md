@@ -65,7 +65,7 @@ GitHub then rebuilds the site automatically (~1 minute).
 | --- | --- | --- |
 | Today | `src/pages/Today.jsx` | The landing dashboard: time-aware greeting, hero completion ring with 14-day sparkline, streak / month average / spent today / open sprints stat cards, "Next up" scheduler forecast, quick jump grid |
 | Master Scheduler | `src/pages/Scheduler.jsx` | Interactive 24-hour planner with **Now** hour indicator, quick-add presets (Fajar, Zohar, Asr, Maghrib, Isha, Morning Walk, Exercise/Gym, Deep Work/Coding, Reading) tucked into the **Add item** popover, fully custom items (title / category / start time / duration / **P1–P4 priority**), per-item **add · edit · remove**, 4-state status toggles (Pending · In Progress · Completed · Skipped) and the **automation switches**: *Auto-fill routine daily* + *Slot-start reminders* (browser notifications) |
-| Daily Sheet | `src/pages/Daily.jsx` | 5 tracked habits (Prayers, Exercise, Walk, Coding hours, Water), live completion ring, real-time `Completion % = Completed / Total × 100` |
+| Daily Sheet | `src/pages/Daily.jsx` | 5 tracked habits (Prayers, Exercise, Walk, Coding hours, Water), live completion ring, real-time `Completion % = Completed / Total × 100`, plus the **Namaz tracker** below |
 | Analytics | `src/pages/Analytics.jsx` | **Range selector — Week / Month / Year / Years** with matching graphs (daily curve, monthly bar per year, yearly bar across all time), previous-period delta (week-over-week, month-over-month, year-over-year), category-consistency donut scoped to the range, monthly average score card, and a **GitHub-style 15-week consistency heatmap** |
 | Goals | `src/pages/Goals.jsx` | Tabbed workspace: Daily / Small (weekly-sprint) / Large (monthly-quarterly), milestone checklists with animated progress bars, **P1–P4 priority chips** on daily goals and **"N days overdue"** badges on missed small goals |
 | Finance | `src/pages/Finance.jsx` | Amounts in **PKR** (`Rs`): quick-entry logger (date, title, 5 categories, amount), Today & This-Month summary cards, category donut, grouped monthly log, plus **editable monthly budget limits** (overall + per category) with progress bars that turn amber at 80% and rose when over |
@@ -87,6 +87,16 @@ GitHub then rebuilds the site automatically (~1 minute).
 - **Budget limits** — set an overall and per-category monthly cap on the
   Finance page; bars warn at 80% and go red past the limit.
   All money amounts are formatted in **Pakistani Rupees (Rs)**.
+- **Namaz tracker** — five dedicated prayer slots (Fajr → Isha) with
+  **calculated prayer times** (`adhan`, computed on-device — works offline).
+  Set your location once via geolocation or one of the preset cities; times
+  follow the **calculation method chosen by timezone** (Karachi method in
+  Pakistan, Muslim World League in Europe, ISNA in the US…), with an
+  overridable method dropdown and Hanafi/Shafi Asr toggle. When the device
+  travels to a new timezone the card prompts (or auto-refreshes, with
+  permission already granted) so Fajr in Lahore is not Fajr in Rome. A
+  compact version with a "next prayer" countdown sits on the Today page;
+  per-day logs live in `data.namazLog`, location settings in `data.namaz`.
 
 ## Threshold color logic
 
