@@ -63,7 +63,7 @@ export default function Daily({ data, patch, todayKey }) {
         subtitle="Five tracked habits, one honest number. Completion % updates in real time as you check items off."
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Score card */}
         <section className="card flex flex-col items-center justify-center text-center" aria-labelledby="today-score">
           <h2 id="today-score" className="section-title self-start">Today's score</h2>

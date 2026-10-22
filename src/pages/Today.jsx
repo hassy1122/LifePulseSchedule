@@ -165,7 +165,7 @@ export default function Today({ data, patch, todayKey, onNavigate }) {
       </section>
 
       {/* Stat row */}
-      <div className="mb-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Flame} tint="bg-orange-50 text-orange-600" label="≥75% streak" value={`${streak} day${streak === 1 ? "" : "s"}`} />
         <StatCard icon={ChartColumn} tint="bg-violet-50 text-violet-600" label={`${month.slice(5)} month average`} value={`${monthAvg}%`} />
         <StatCard icon={Wallet} tint="bg-emerald-50 text-emerald-600" label="Spent today" value={fmtMoney(Math.round(spentToday * 100) / 100)} />
@@ -177,7 +177,7 @@ export default function Today({ data, patch, todayKey, onNavigate }) {
         <NamazCard data={data} patch={patch} todayKey={todayKey} compact />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Next up */}
         <section className="card" aria-labelledby="next-up">
           <h2 id="next-up" className="section-title">Next up</h2>
@@ -212,7 +212,7 @@ export default function Today({ data, patch, todayKey, onNavigate }) {
         {/* Quick actions */}
         <section className="card" aria-labelledby="quick-actions">
           <h2 id="quick-actions" className="section-title">Jump to</h2>
-          <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+          <ul className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {QUICK_ACTIONS.map(({ id, label, icon: Icon, tint }) => (
               <li key={id}>
                 <button

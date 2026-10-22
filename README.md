@@ -120,6 +120,11 @@ GitHub then rebuilds the site automatically (~1 minute).
 - **Quick add (⌘/Ctrl + K)** — a command palette from any page: add a task
   (lands in today's schedule), a note, an expense or a ledger entry in one
   keystroke (`components/QuickAdd.jsx`); sidebar button + mobile FAB.
+- **Responsive design** — every page audited at phone width (390 px):
+  all responsive grids declare an explicit `grid-cols-1` base (Notes had a
+  real 1 100 px overflow bug from the implicit auto track), `body` has
+  `overflow-x: clip` as a safety net, and the mobile bottom bar honours
+  `env(safe-area-inset-bottom)` for notched devices.
 
 ## Threshold color logic
 
@@ -148,6 +153,8 @@ src/
     utils.js            # date keys, formatting, pct math, currency
   components/
     Sidebar.jsx         # desktop sidebar (theme toggle) + mobile bottom bar
+                        # (3 primary tabs + "More" sheet: nav, day/night,
+                        #  accent dots, quick add, backup/restore, reset)
     ui.jsx              # Badge, ProgressBar, Stepper, Switch, ProgressRing, EmptyState, PageHeader
   pages/                # one file per module (see table above)
 ```

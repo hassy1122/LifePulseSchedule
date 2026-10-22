@@ -302,7 +302,7 @@ export default function Analytics({ data, todayKey, isDark = false }) {
       </PageHeader>
 
       {/* Average + stat cards */}
-      <div className="mb-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className={`card border ${band.bg} ${band.border} md:col-span-2 xl:col-span-1`} aria-live="polite">
           <p className={`section-title ${band.text} opacity-80`}>{AVG_TITLES[range]}</p>
           <p className={`mt-3 text-5xl font-extrabold tracking-tight ${band.text}`}>{avg}%</p>
@@ -407,7 +407,7 @@ export default function Analytics({ data, todayKey, isDark = false }) {
         <p className="mb-4 text-xs font-medium text-slate-400">
           Days each category was completed, {range === "week" ? "this week" : range === "month" ? "this month" : range === "year" ? "this year" : "all time"} — Prayers vs. Exercise vs. Coding.
         </p>
-        <div className="grid items-center gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-2">
           <div className="h-64" role="img" aria-label={`Donut chart: ${consistency.map(c => `${c.label} ${c.value} days`).join(", ")}`}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

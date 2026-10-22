@@ -149,7 +149,7 @@ export default function Goals({ data, patch, todayKey, undoable }) {
             {small.length === 0 ? (
               <EmptyState icon={Target} title="Sprint board is empty" hint="Add a goal scoped to this week or a short sprint." />
             ) : (
-              <ul className="grid gap-3 md:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {small.map((g) => {
                   const overdue = !g.done && g.due && g.due < todayKey
                   const overdueDays = overdue

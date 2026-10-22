@@ -11,6 +11,8 @@
 
 @layer base {
   body {
+    /* Safety net: no element can ever force sideways panning on phones. */
+    overflow-x: clip;
     font-family: var(--font-sans);
     color: #0f172a;
     background:

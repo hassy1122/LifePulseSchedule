@@ -124,7 +124,7 @@ export default function Finance({ data, patch, todayKey, undoable }) {
       </header>
 
       {/* Summary cards */}
-      <div className="mb-6 grid gap-6 md:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="card flex items-center gap-4">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E9D5FF] text-[#6B21A8]" aria-hidden="true">
             <CalendarDays className="h-6 w-6" strokeWidth={2.2} />
@@ -154,7 +154,7 @@ export default function Finance({ data, patch, todayKey, undoable }) {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
         {/* Quick entry */}
         <form className="card h-fit xl:col-span-2" onSubmit={submit} aria-label="Add transaction">
           <h2 className="mb-4 section-title">Quick entry</h2>
@@ -221,7 +221,7 @@ export default function Finance({ data, patch, todayKey, undoable }) {
         {/* Breakdown + list */}
         <div className="grid gap-6 xl:col-span-3">
           <section className="card" aria-label="Category breakdown">
-            <div className="grid items-center gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-2">
               <div className="h-56" role="img" aria-label={`Spending by category for this month, total ${fmtMoney(pieTotal)}`}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -400,7 +400,7 @@ export default function Finance({ data, patch, todayKey, undoable }) {
 
         {/* Add entry */}
         <form
-          className="mb-4 grid gap-2 sm:grid-cols-[1fr_120px_auto_auto]"
+          className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_auto_auto]"
           onSubmit={(e) => {
             e.preventDefault()
             const amt = Number(ledgerForm.amount)

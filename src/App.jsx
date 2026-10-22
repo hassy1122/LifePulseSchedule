@@ -254,7 +254,18 @@ export default function App() {
         onAccent={setAccent}
         onQuickAdd={() => setQuickAddOpen(true)}
       />
-      <MobileBar page={page} onNavigate={setPage} />
+      <MobileBar
+        page={page}
+        onNavigate={setPage}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        accent={accentOrDefault(accent)}
+        onAccent={setAccent}
+        onQuickAdd={() => setQuickAddOpen(true)}
+        onExport={onExport}
+        onImport={onImport}
+        onReset={reset}
+      />
 
       {/* Mobile floating quick-add button */}
       <button
