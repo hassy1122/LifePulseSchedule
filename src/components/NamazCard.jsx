@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { Check, MapPin } from "lucide-react"
+import { Switch } from "../components/ui"
 import {
   CITY_PRESETS,
   METHODS,
@@ -111,6 +112,38 @@ export default function NamazCard({ data, patch, todayKey, compact = false }) {
         madhab: d.namaz?.madhab ?? "hanafi",
       }
     })
+  }
+
+  /** Toggle "10 minutes before" alerts, requesting notification permission. */
+  const setAlerts = (enabled) => {
+    setGeoErr(null)
+    if (!enabled) {
+      patch((d) => {
+        ;(d.settings ??= { reminders: false }).prayerAlerts = false
+      })
+      return
+    }
+    if (typeof Notification === "undefined") {
+      setGeoErr("This browser doesn't support notifications.")
+      return
+    }
+    if (Notification.permission === "granted") {
+      patch((d) => {
+        ;(d.settings ??= { reminders: false }).prayerAlerts = true
+      })
+      return
+    }
+    Notification.requestPermission()
+      .then((p) => {
+        if (p === "granted") {
+          patch((d) => {
+            ;(d.settings ??= { reminders: false }).prayerAlerts = true
+          })
+        } else {
+          setGeoErr("Alerts need notification permission — allow it in the browser prompt.")
+        }
+      })
+      .catch(() => setGeoErr("Could not request notification permission."))
   }
 
   /** Toggle a prayer slot for this day. */
@@ -365,6 +398,11 @@ export default function NamazCard({ data, patch, todayKey, compact = false }) {
             >
               {geoBusy ? "Locating…" : "↻ Update my location"}
             </button>
+            <Switch
+              checked={data.settings?.prayerAlerts === true}
+              onChange={setAlerts}
+              label="Alert 10 min before"
+            />
             <span className="ml-auto text-[10px] font-medium text-slate-300 dark:text-slate-600">
               {doneCount}/5 logged · adhan times, jamaat may differ
             </span>

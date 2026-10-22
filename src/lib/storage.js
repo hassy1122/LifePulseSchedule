@@ -30,7 +30,7 @@ export function usePersistentState(key, buildInitial) {
 /** Patch helper: clone the whole store, let the mutator edit it in place. */
 export function patchState(setState, mutator) {
   setState((prev) => {
-    const next = structuredClone(prev)
+    const next = structuredClone(prev ?? {})
     mutator(next)
     return next
   })

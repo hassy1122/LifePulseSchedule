@@ -8,8 +8,10 @@ import {
   StickyNote,
   Sun,
   Target,
+  Zap,
   Wallet,
 } from "lucide-react"
+import { ACCENTS } from "../lib/accents"
 
 const NAV = [
   { id: "today", label: "Today", icon: Sun, hint: "Everything at a glance" },
@@ -21,7 +23,7 @@ const NAV = [
   { id: "notes", label: "Notes", icon: StickyNote, hint: "Markdown workspace" },
 ]
 
-export default function Sidebar({ page, onNavigate, onReset, onExport, onImport, theme, onToggleTheme }) {
+export default function Sidebar({ page, onNavigate, onReset, onExport, onImport, theme, onToggleTheme, accent = "violet", onAccent, onQuickAdd }) {
   const [status, setStatus] = useState(null)
   const statusTimer = useRef(null)
 
@@ -91,6 +93,19 @@ export default function Sidebar({ page, onNavigate, onReset, onExport, onImport,
 
       {/* Footer */}
       <div className="border-t border-slate-100 p-4">
+        <button
+          type="button"
+          onClick={onQuickAdd}
+          className="mb-3 flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-violet-300 hover:text-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300"
+          title="Quick add from any page"
+        >
+          <span className="flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5" aria-hidden="true" /> Quick add
+          </span>
+          <kbd className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-400 dark:border-slate-600">
+            Ctrl K
+          </kbd>
+        </button>
         <div className="flex items-center justify-between px-1">
           <p className="pr-2 text-[11px] font-medium text-slate-400">Saved in this browser</p>
           <button
@@ -103,6 +118,29 @@ export default function Sidebar({ page, onNavigate, onReset, onExport, onImport,
           >
             {theme === "dark" ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
           </button>
+        </div>
+        {/* Accent color picker — sibling of the dark/light toggle */}
+        <div className="mt-2.5 flex items-center justify-between px-1" role="group" aria-label="Accent color">
+          <p className="text-[11px] font-medium text-slate-400">Accent</p>
+          <div className="flex gap-1.5">
+            {ACCENTS.map((a) => {
+              const active = accent === a.id
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => onAccent(a.id)}
+                  aria-pressed={active}
+                  aria-label={`${a.label} accent`}
+                  title={a.label}
+                  className={`h-5 w-5 rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 ${
+                    active ? "ring-2 ring-slate-400 ring-offset-1 dark:ring-slate-300 dark:ring-offset-slate-900" : "opacity-70 hover:opacity-100"
+                  }`}
+                  style={{ backgroundColor: a.dot }}
+                />
+              )
+            })}
+          </div>
         </div>
         <div className="mt-2 flex gap-1.5">
           <button

@@ -66,7 +66,7 @@ function Markdown({ src }) {
 
 /* ---------- Note editor ---------- */
 
-export default function Notes({ data, patch }) {
+export default function Notes({ data, patch, undoable }) {
   const notes = useMemo(
     () => [...data.notes].sort((a, b) => b.updatedAt - a.updatedAt),
     [data.notes],
@@ -111,6 +111,15 @@ export default function Notes({ data, patch }) {
   }
 
   function removeNote(id) {
+    const gone = notes.find((n) => n.id === id)
+    if (gone) {
+      undoable?.(
+        (d) => {
+          d.notes.push(gone)
+        },
+        `Deleted note "${gone.title || "Untitled"}"`,
+      )
+    }
     patch((d) => {
       d.notes = d.notes.filter((n) => n.id !== id)
     })

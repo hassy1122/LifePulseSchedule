@@ -30,6 +30,37 @@ export function dailyPct(entry) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Streaks & milestone badges (per tracker, from the daily history).    */
+/* ------------------------------------------------------------------ */
+
+/** Badge milestones: 🔥 streaks shown once these day-counts are reached. */
+export const STREAK_MILESTONES = [7, 30, 100]
+
+/** Highest milestone reached for a streak count (null below 7 days). */
+export function streakBadge(streak) {
+  const hit = STREAK_MILESTONES.filter((m) => streak >= m)
+  return hit.length ? hit[hit.length - 1] : null
+}
+
+/**
+ * Consecutive days a tracker's target was met, ending today (or yesterday
+ * when today is still incomplete — matching the Today page streak rule).
+ */
+export function trackerStreak(daily, tracker, todayKey) {
+  const ok = (key) => {
+    const v = daily[key]?.[tracker.id]
+    return typeof v === "number" ? v >= tracker.target : !!v
+  }
+  let cursor = ok(todayKey) ? todayKey : addDays(todayKey, -1)
+  let count = 0
+  while (cursor && ok(cursor)) {
+    count += 1
+    cursor = addDays(cursor, -1)
+  }
+  return count
+}
+
+/* ------------------------------------------------------------------ */
 /* Deterministic pseudo-random so the demo data set is stable & tuned. */
 /* ------------------------------------------------------------------ */
 function mulberry32(seed) {
@@ -69,7 +100,13 @@ export function buildSeedData() {
     scheduler: {},
     daily: {},
     routines: { enabled: true },
-    settings: { reminders: false },
+    settings: { reminders: false, prayerAlerts: false },
+    /* Lend/Borrow ledger: dir "lent" → they owe me, "borrowed" → I owe them. */
+    ledger: [
+      { id: "ld-1", name: "Hamza", amount: 2500, dir: "lent", note: "Lunch + ride", date: addDays(todayKey, -6), settled: null },
+      { id: "ld-2", name: "Fatima", amount: 1200, dir: "borrowed", note: "Stationery run", date: addDays(todayKey, -3), settled: null },
+      { id: "ld-3", name: "Umer", amount: 8000, dir: "lent", note: "Book fair purchase", date: addDays(todayKey, -12), settled: null },
+    ],
     goals: {
       daily: [
         { id: "dg-1", title: "Plan tomorrow before Isha", done: true, priority: 4 },

@@ -1,6 +1,8 @@
+import { useMemo } from "react"
 import { Droplets, Dumbbell, Check, CodeXml, Moon, Footprints, Flame } from "lucide-react"
-import { dailyDoneCount, dailyPct, TRACKERS } from "../lib/seed"
+import { dailyDoneCount, dailyPct, trackerStreak, streakBadge, TRACKERS } from "../lib/seed"
 import { bandFor } from "../lib/theme"
+import { burstConfetti } from "../lib/confetti"
 import { fmtDayLong } from "../lib/utils"
 import { EmptyState, PageHeader, ProgressRing, Stepper } from "../components/ui"
 import NamazCard from "../components/NamazCard"
@@ -27,7 +29,22 @@ export default function Daily({ data, patch, todayKey }) {
   const pct = dailyPct(entry)
   const band = bandFor(pct)
 
+  /* 🔥 streaks + milestone badges per tracker, from the full history */
+  const streaks = useMemo(
+    () => Object.fromEntries(TRACKERS.map((t) => [t.id, trackerStreak(data.daily || {}, t, todayKey)])),
+    [data.daily, todayKey],
+  )
+
   function update(mutate) {
+    // Project the change first — celebrate a fresh 100% 🎉
+    const before = dailyPct(data.daily[todayKey])
+    const probe = structuredClone(
+      data.daily[todayKey] || { prayers: false, exercise: false, walk: false, coding: 0, water: 0 },
+    )
+    mutate(probe)
+    const after = dailyPct(probe)
+    if (after >= 100 && before < 100) burstConfetti()
+
     patch((d) => {
       if (!d.daily[todayKey]) d.daily[todayKey] = { prayers: false, exercise: false, walk: false, coding: 0, water: 0 }
       mutate(d.daily[todayKey])
@@ -88,8 +105,26 @@ export default function Daily({ data, patch, todayKey }) {
                     <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${TRACKER_TINTS[t.id]}`} aria-hidden="true">
                       <Icon className="h-5 w-5" strokeWidth={2.2} />
                     </span>
-                    <div>
-                      <p className={`text-sm font-bold ${ok ? "text-emerald-800" : "text-slate-800"}`}>{t.label}</p>
+                    <div className="min-w-0">
+                      <p className={`flex flex-wrap items-center gap-2 text-sm font-bold ${ok ? "text-emerald-800" : "text-slate-800"}`}>
+                        {t.label}
+                        {streaks[t.id] >= 2 ? (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-orange-100/70 px-1.5 py-0.5 text-[10px] font-extrabold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
+                            title={`${streaks[t.id]}-day streak`}
+                          >
+                            🔥 {streaks[t.id]}
+                          </span>
+                        ) : null}
+                        {streakBadge(streaks[t.id]) ? (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-[#FEF3C7] px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:bg-amber-400/20 dark:text-amber-300"
+                            title={`Milestone reached: ${streakBadge(streaks[t.id])} days`}
+                          >
+                            🏅 {streakBadge(streaks[t.id])}d
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-[11px] font-medium text-slate-400">
                         {t.kind === "toggle" ? "Done / not done" : `Goal: ${t.target}${t.unit}`}
                       </p>

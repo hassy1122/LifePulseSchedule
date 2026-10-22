@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Check, Flag, Plus, Target, Trash2 } from "lucide-react"
 import { pctOf, uid, fmtDayShort, addDays, keyToDate } from "../lib/utils"
 import { bandFor, priorityOf } from "../lib/theme"
+import { burstConfetti } from "../lib/confetti"
 import { Badge, EmptyState, PageHeader, ProgressBar } from "../components/ui"
 
 const DAY_MS = 86400000
@@ -12,7 +13,7 @@ const TABS = [
   { id: "large", label: "Large Goals", hint: "Monthly / quarterly missions" },
 ]
 
-export default function Goals({ data, patch, todayKey }) {
+export default function Goals({ data, patch, todayKey, undoable }) {
   const [tab, setTab] = useState("daily")
   const { daily, small, large } = data.goals
 
@@ -35,24 +36,43 @@ export default function Goals({ data, patch, todayKey }) {
   }
 
   function toggle(list, id) {
+    const g = data.goals[list].find((x) => x.id === id)
+    const willComplete = Boolean(g && !g.done)
     patch((d) => {
-      const g = d.goals[list].find((x) => x.id === id)
-      if (g) g.done = !g.done
+      const gx = d.goals[list].find((x) => x.id === id)
+      if (gx) gx.done = !gx.done
     })
+    if (willComplete) burstConfetti() // 🎉 goal won
   }
 
   function remove(list, id) {
+    const g = data.goals[list].find((x) => x.id === id)
+    if (!g) return
+    undoable?.(
+      (d) => {
+        d.goals[list].push(g)
+      },
+      `Removed goal "${g.title}"`,
+    )
     patch((d) => {
       d.goals[list] = d.goals[list].filter((x) => x.id !== id)
     })
   }
 
   function toggleMilestone(goalId, milestoneId) {
+    const g = data.goals.large.find((x) => x.id === goalId)
+    const allDone = g
+      ? g.milestones
+          .map((m) => (m.id === milestoneId ? !m.done : m.done))
+          .every(Boolean)
+      : false
+    const anyMilestone = g ? g.milestones.length > 0 : false
     patch((d) => {
-      const g = d.goals.large.find((x) => x.id === goalId)
-      const m = g?.milestones.find((x) => x.id === milestoneId)
+      const gx = d.goals.large.find((x) => x.id === goalId)
+      const m = gx?.milestones.find((x) => x.id === milestoneId)
       if (m) m.done = !m.done
     })
+    if (allDone && anyMilestone) burstConfetti() // 🎉 mission complete
   }
 
   function addMilestone(goalId, title) {

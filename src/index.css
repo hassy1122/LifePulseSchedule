@@ -63,6 +63,52 @@
   }
 }
 
+/* ---------- Accent color themes (sibling of the dark toggle) ----------
+   Tailwind v4 utilities reference theme variables, so remapping the violet
+   variables under [data-accent] re-tints every purple accent in the app. */
+[data-accent="teal"] {
+  --color-violet-50: #f0fdfa;
+  --color-violet-100: #ccfbf1;
+  --color-violet-200: #99f6e4;
+  --color-violet-300: #5eead4;
+  --color-violet-400: #2dd4bf;
+  --color-violet-500: #14b8a6;
+  --color-violet-600: #0d9488;
+  --color-violet-700: #0f766e;
+  --color-violet-800: #115e59;
+  --color-violet-900: #134e4a;
+  --color-violet-950: #042f2e;
+  --color-fuchsia-500: #2dd4bf; /* brand gradient partner */
+}
+[data-accent="rose"] {
+  --color-violet-50: #fff1f2;
+  --color-violet-100: #ffe4e6;
+  --color-violet-200: #fecdd3;
+  --color-violet-300: #fda4af;
+  --color-violet-400: #fb7185;
+  --color-violet-500: #f43f5e;
+  --color-violet-600: #e11d48;
+  --color-violet-700: #be123c;
+  --color-violet-800: #9f1239;
+  --color-violet-900: #881337;
+  --color-violet-950: #4c0519;
+  --color-fuchsia-500: #fb7185;
+}
+[data-accent="amber"] {
+  --color-violet-50: #fffbeb;
+  --color-violet-100: #fef3c7;
+  --color-violet-200: #fde68a;
+  --color-violet-300: #fcd34d;
+  --color-violet-400: #fbbf24;
+  --color-violet-500: #f59e0b;
+  --color-violet-600: #d97706;
+  --color-violet-700: #b45309;
+  --color-violet-800: #92400e;
+  --color-violet-900: #78350f;
+  --color-violet-950: #451a03;
+  --color-fuchsia-500: #fbbf24;
+}
+
 /* ---------- Dark-mode conveniences for recurring inline utility colors ---------- */
 .dark .text-slate-900 { color: #f8fafc; }
 .dark .text-slate-800 { color: #e2e8f0; }
@@ -76,9 +122,9 @@
 .dark .hover\:bg-slate-50:hover { background-color: rgba(30, 41, 59, 0.55); }
 .dark .hover\:text-slate-800:hover { color: #f1f5f9; }
 .dark .hover\:bg-rose-50:hover { background-color: rgba(153, 27, 27, 0.15); }
-.dark .hover\:bg-violet-50:hover { background-color: rgba(139, 92, 246, 0.12); }
-.dark .hover\:bg-violet-100:hover { background-color: rgba(139, 92, 246, 0.2); }
-.dark .hover\:text-violet-700:hover { color: #c4b5fd; }
+.dark .hover\:bg-violet-50:hover { background-color: color-mix(in oklab, var(--color-violet-500) 12%, transparent); }
+.dark .hover\:bg-violet-100:hover { background-color: color-mix(in oklab, var(--color-violet-500) 20%, transparent); }
+.dark .hover\:text-violet-700:hover { color: var(--color-violet-300); }
 
 .dark .scroll-slim::-webkit-scrollbar-thumb { background-color: #334155; }
 

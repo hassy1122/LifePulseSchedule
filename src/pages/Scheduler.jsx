@@ -238,7 +238,7 @@ function ItemPopover({ editing, blocks, onSubmit, onClose }) {
 
 /* ---------------- Page ---------------- */
 
-export default function Scheduler({ data, patch, todayKey }) {
+export default function Scheduler({ data, patch, todayKey, undoable }) {
   const [viewKey, setViewKey] = useState(todayKey)
   const [editor, setEditor] = useState(null) // null | { block?: scheduler item }
   const [nowHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60)
@@ -333,6 +333,17 @@ export default function Scheduler({ data, patch, todayKey }) {
   }
 
   function remove(id) {
+    const gone = blocks.find((x) => x.id === id)
+    if (gone) {
+      undoable?.(
+        (d) => {
+          const arr = d.scheduler[viewKey] ??= []
+          arr.push(gone)
+          arr.sort((a, b) => a.start - b.start)
+        },
+        `Removed "${gone.title}" from the schedule`,
+      )
+    }
     updateDay((arr) => {
       const i = arr.findIndex((x) => x.id === id)
       if (i >= 0) arr.splice(i, 1)

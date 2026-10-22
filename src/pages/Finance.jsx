@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
-import { Bus, Plus, CircleDollarSign, Receipt, CalendarDays, Trash2, Utensils, Wrench, Wallet, Laptop } from "lucide-react"
+import { Bus, Plus, CircleDollarSign, Receipt, CalendarDays, Trash2, Utensils, Wrench, Wallet, Laptop, HandCoins, Download, Check, X } from "lucide-react"
 import { fmtDayShort, fmtMoney, monthKeyOf, uid } from "../lib/utils"
 
 const CATEGORIES = [
@@ -13,10 +13,38 @@ const CATEGORIES = [
 
 const catMeta = (id) => CATEGORIES.find((c) => c.id === id) || CATEGORIES[4]
 
-export default function Finance({ data, patch, todayKey }) {
+/** Build & download a CSV of every transaction (plus the ledger). */
+function downloadCsv(data, todayKey) {
+  const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`
+  const lines = [["Date", "Title", "Category", "Amount (PKR)"]]
+  const txs = [...data.finance.transactions].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+  for (const t of txs) lines.push([t.date, t.title, t.category, t.amount])
+  const ledger = data.ledger ?? []
+  if (ledger.length) {
+    lines.push([])
+    lines.push(["Ledger", "Person", "Direction", "Amount (PKR)", "Date", "Status", "Note"])
+    for (const l of ledger) {
+      lines.push([l.date, l.name, l.dir === "lent" ? "They owe me" : "I owe them", l.amount, l.date, l.settled ? `Settled ${l.settled}` : "Open", l.note || ""])
+    }
+  }
+  const csv = "\uFEFF" + lines.map((r) => r.map(esc).join(",")).join("\n")
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `lifepulse-finance-${todayKey}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export default function Finance({ data, patch, todayKey, undoable }) {
   const month = monthKeyOf(todayKey)
   const [form, setForm] = useState({ date: todayKey, title: "", category: "Food", amount: "" })
+  const [ledgerForm, setLedgerForm] = useState({ name: "", amount: "", dir: "lent", note: "" })
   const txs = data.finance.transactions
+  const ledger = data.ledger ?? []
 
   const todayTotal = useMemo(() => sum(txs.filter((t) => t.date === todayKey)), [txs, todayKey])
   const monthTotal = useMemo(() => sum(txs.filter((t) => t.date.startsWith(month))), [txs, month])
@@ -85,6 +113,14 @@ export default function Finance({ data, patch, todayKey }) {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Finance</h1>
           <p className="mt-1 text-sm font-medium text-slate-500">Log spending in seconds — totals and charts update instantly.</p>
         </div>
+        <button
+          type="button"
+          className="btn-soft !h-9 text-xs"
+          onClick={() => downloadCsv(data, todayKey)}
+          title="Download all transactions as a CSV spreadsheet"
+        >
+          <Download className="h-4 w-4" aria-hidden="true" /> Export CSV
+        </button>
       </header>
 
       {/* Summary cards */}
@@ -318,11 +354,17 @@ export default function Finance({ data, patch, todayKey }) {
                             <span className="text-sm font-bold tabular-nums text-slate-700">{fmtMoney(t.amount)}</span>
                             <button
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
+                                undoable?.(
+                                  (d) => {
+                                    d.finance.transactions.push(t)
+                                  },
+                                  `Deleted "${t.title}"`,
+                                )
                                 patch((d) => {
                                   d.finance.transactions = d.finance.transactions.filter((x) => x.id !== t.id)
                                 })
-                              }
+                              }}
                               aria-label={`Delete ${t.title}`}
                               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-rose-50 hover:text-rose-500 focus-visible:outline-2 focus-visible:outline-violet-500"
                             >
@@ -339,6 +381,171 @@ export default function Finance({ data, patch, todayKey }) {
           </section>
         </div>
       </div>
+
+      {/* Lend / Borrow ledger */}
+      <section className="card mt-6" aria-label="Lend and borrow ledger">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 section-title">
+            <HandCoins className="h-4 w-4 text-[color:var(--color-violet-600)]" aria-hidden="true" /> Lend / borrow
+          </h2>
+          <div className="flex flex-wrap gap-2 text-[11px] font-bold">
+            <span className="rounded-full bg-[#DCFCE7] px-3 py-1 text-[#166534]">
+              To receive: {fmtMoney(ledger.filter((l) => l.dir === "lent" && !l.settled).reduce((a, l) => a + l.amount, 0))}
+            </span>
+            <span className="rounded-full bg-[#FEE2E2] px-3 py-1 text-[#991B1B]">
+              To pay: {fmtMoney(ledger.filter((l) => l.dir === "borrowed" && !l.settled).reduce((a, l) => a + l.amount, 0))}
+            </span>
+          </div>
+        </div>
+
+        {/* Add entry */}
+        <form
+          className="mb-4 grid gap-2 sm:grid-cols-[1fr_120px_auto_auto]"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const amt = Number(ledgerForm.amount)
+            if (!ledgerForm.name.trim() || !Number.isFinite(amt) || amt <= 0) return
+            patch((d) => {
+              ;(d.ledger ??= []).push({
+                id: uid("ld"),
+                name: ledgerForm.name.trim(),
+                amount: Math.round(amt * 100) / 100,
+                dir: ledgerForm.dir === "borrowed" ? "borrowed" : "lent",
+                note: ledgerForm.note.trim(),
+                date: todayKey,
+                settled: null,
+              })
+            })
+            setLedgerForm({ name: "", amount: "", dir: ledgerForm.dir, note: "" })
+          }}
+        >
+          <input
+            className="input"
+            placeholder="Who? e.g. Hamza"
+            aria-label="Person"
+            value={ledgerForm.name}
+            onChange={(e) => setLedgerForm({ ...ledgerForm, name: e.target.value })}
+            required
+          />
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            className="input"
+            placeholder="Amount (Rs)"
+            aria-label="Amount in rupees"
+            value={ledgerForm.amount}
+            onChange={(e) => setLedgerForm({ ...ledgerForm, amount: e.target.value })}
+            required
+          />
+          <select
+            className="input sm:w-40"
+            aria-label="Direction"
+            value={ledgerForm.dir}
+            onChange={(e) => setLedgerForm({ ...ledgerForm, dir: e.target.value })}
+          >
+            <option value="lent">They owe me</option>
+            <option value="borrowed">I owe them</option>
+          </select>
+          <button type="submit" className="btn-primary">
+            <Plus className="h-4 w-4" aria-hidden="true" /> Add
+          </button>
+        </form>
+
+        {ledger.length === 0 ? (
+          <p className="py-6 text-center text-sm font-medium text-slate-400">
+            Nothing lent or borrowed yet — keep friendly money clean and tracked.
+          </p>
+        ) : (
+          <ul className="overflow-hidden rounded-2xl border border-slate-100">
+            {[...ledger]
+              .sort((a, b) => (a.settled ? 1 : 0) - (b.settled ? 1 : 0))
+              .map((l) => {
+                const settled = Boolean(l.settled)
+                return (
+                  <li
+                    key={l.id}
+                    className={`flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-2.5 last:border-b-0 ${
+                      settled ? "bg-slate-50/70 dark:bg-slate-800/20" : "bg-white dark:bg-slate-800/40"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className={`truncate text-sm font-bold ${settled ? "text-slate-400 line-through" : "text-slate-800"}`}>
+                          {l.name}
+                        </span>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            l.dir === "lent" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" : "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+                          }`}
+                        >
+                          {l.dir === "lent" ? "They owe you" : "You owe"}
+                        </span>
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-400">
+                        {fmtDayShort(l.date)}
+                        {l.note ? ` · ${l.note}` : ""}
+                        {settled ? ` · settled ${fmtDayShort(l.settled)}` : ""}
+                      </span>
+                    </span>
+                    <span className={`text-sm font-extrabold tabular-nums ${settled ? "text-slate-400" : "text-slate-700"}`}>
+                      {fmtMoney(l.amount)}
+                    </span>
+                    {settled ? (
+                      <button
+                        type="button"
+                        aria-label={`Reopen ${l.name}'s entry`}
+                        title="Reopen"
+                        onClick={() =>
+                          patch((d) => {
+                            const e = d.ledger?.find((x) => x.id === l.id)
+                            if (e) e.settled = null
+                          })
+                        }
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-300 transition hover:bg-slate-100 hover:text-slate-600"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label={`Mark ${l.name}'s ${fmtMoney(l.amount)} as settled`}
+                        onClick={() =>
+                          patch((d) => {
+                            const e = d.ledger?.find((x) => x.id === l.id)
+                            if (e) e.settled = todayKey
+                          })
+                        }
+                        className="flex h-7 items-center gap-1 rounded-lg border border-emerald-200 bg-[#DCFCE7] px-2.5 text-[11px] font-bold text-[#166534] transition hover:brightness-95"
+                      >
+                        <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" /> Settle
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        undoable?.(
+                          (d) => {
+                            d.ledger ??= []
+                            d.ledger.push(l)
+                          },
+                          `Removed ledger entry for ${l.name}`,
+                        )
+                        patch((d) => {
+                          d.ledger = d.ledger.filter((x) => x.id !== l.id)
+                        })
+                      }}
+                      aria-label={`Delete ledger entry for ${l.name}`}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-300 transition hover:bg-rose-50 hover:text-rose-500"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  </li>
+                )
+              })}
+          </ul>
+        )}
+      </section>
     </div>
   )
 }

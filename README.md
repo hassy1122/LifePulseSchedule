@@ -97,6 +97,29 @@ GitHub then rebuilds the site automatically (~1 minute).
   permission already granted) so Fajr in Lahore is not Fajr in Rome. A
   compact version with a "next prayer" countdown sits on the Today page;
   per-day logs live in `data.namazLog`, location settings in `data.namaz`.
+  Optional **10-minutes-before alerts** fire a browser notification for each
+  prayer (toggle on the Namaz card; works while any LifePulse window is open).
+- **Lend/borrow ledger** — Finance card tracking who owes whom (`data.ledger`):
+  "They owe you / You owe" per entry, receive & pay totals, one-tap **Settle**
+  (with date) and reopen, optional note per entry. Included in the CSV export.
+- **Finance CSV export** — one button downloads every transaction (plus the
+  ledger) as `lifepulse-finance-YYYY-MM-DD.csv`.
+- **Streaks & badges** — 🔥 per-tracker streak counters (Prayers, Exercise,
+  Walk, Coding, Water) with 🏅 milestone badges at 7 / 30 / 100 days, computed
+  from the full daily history (`trackerStreak` / `streakBadge` in `lib/seed.js`).
+- **Undo toasts** — deleting a schedule block, transaction, ledger entry,
+  milestone or note shows an "Undo" pill (6 s window) that restores the
+  previous snapshot (`undoable` in `App.jsx`, `Toast.jsx`).
+- **Confetti wins** 🎉 — a burst when the Daily Sheet reaches 100% or when a
+  goal / all goal milestones complete (`lib/confetti.js`, honors
+  prefers-reduced-motion).
+- **Accent themes** — four accent colors (Violet / Teal / Rose / Amber) in the
+  sidebar footer, the sibling of the dark toggle. Tailwind v4 utilities
+  reference CSS variables, so `[data-accent]` blocks in `index.css` re-tint
+  the entire app; choice persists under `lifepulse-accent-v1`.
+- **Quick add (⌘/Ctrl + K)** — a command palette from any page: add a task
+  (lands in today's schedule), a note, an expense or a ledger entry in one
+  keystroke (`components/QuickAdd.jsx`); sidebar button + mobile FAB.
 
 ## Threshold color logic
 
